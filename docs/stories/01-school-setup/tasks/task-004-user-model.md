@@ -17,14 +17,14 @@ Create the User database model with school association, password hashing, and au
 
 ## Acceptance Criteria
 
-1. [ ] User model exists with all required fields
-2. [ ] Database migration creates `users` table correctly
-3. [ ] User has foreign key to schools table
-4. [ ] Password is hashed using bcrypt/passlib
-5. [ ] Password strength validation implemented
-6. [ ] JWT token generation works
-7. [ ] JWT token validation works
-8. [ ] Login endpoint exists
+1. [x] User model exists with all required fields
+2. [x] Database migration creates `users` table correctly
+3. [x] User has foreign key to schools table
+4. [x] Password is hashed using bcrypt/passlib
+5. [x] Password strength validation implemented
+6. [x] JWT token generation works
+7. [x] JWT token validation works
+8. [x] Login endpoint exists
 9. [ ] User creation during registration works
 
 ## Technical Details
@@ -111,13 +111,13 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Password hashing verified (not plain text)
-- [ ] JWT tokens work correctly
-- [ ] Migration runs successfully
-- [ ] Code reviewed
-- [ ] Security best practices followed
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Password hashing verified (not plain text)
+- [x] JWT tokens work correctly
+- [x] Migration runs successfully
+- [x] Code reviewed
+- [x] Security best practices followed
 
 ## Time Estimate
 

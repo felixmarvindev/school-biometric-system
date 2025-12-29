@@ -21,8 +21,8 @@ class School(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True)
 
-    # Relationships (commented out until User model exists)
-    # users = relationship("User", back_populates="school", lazy="selectin")
+    # Relationships
+    users = relationship("User", back_populates="school", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<School(id={self.id}, name='{self.name}', code='{self.code}')>"

@@ -302,16 +302,72 @@ is_deleted BOOLEAN DEFAULT FALSE  -- Soft delete
 - Composite indexes for common query patterns
 - Consider partial indexes for soft-deleted records
 
+### Database Migrations (Alembic)
+
+**CRITICAL: Alembic uses a two-step process - generation and application are separate**
+
+**Important Understanding:**
+- `alembic revision --autogenerate` = **Creates** migration scripts (compares models to database)
+- `alembic upgrade head` = **Applies** existing migration scripts to database
+- These are **intentionally separate** - migration scripts are code that should be reviewed before applying
+
+**Why two steps?**
+1. Migration scripts are version-controlled code that need review
+2. You need explicit control over when migrations are created vs applied
+3. Migration scripts should be committed to git before applying
+4. Allows team members to review changes before database is modified
+
+1. **ALWAYS use `--autogenerate` flag** when creating migrations:
+   ```bash
+   alembic revision --autogenerate -m "description"
+   ```
+
+2. **NEVER manually edit or modify generated migration scripts**
+   - If a migration is incorrect, delete it and regenerate
+   - If changes are needed, modify the SQLAlchemy model first, then regenerate
+
+3. **Model-first approach**:
+   - Make changes to SQLAlchemy models (add columns, change types, etc.)
+   - Use `server_default=` for database-level defaults (not `default=`)
+   - Ensure all models are imported in `alembic/env.py`
+   - Then run `alembic revision --autogenerate -m "description"`
+
+4. **Migration workflow (TWO STEPS)**:
+   ```bash
+   # STEP 1: Generate migration script (creates file, doesn't modify DB)
+   alembic revision --autogenerate -m "add_user_phone_column"
+   
+   # STEP 2: Review the generated migration file
+   # (Check backend/alembic/versions/XXXX_add_user_phone_column.py)
+   
+   # STEP 3: If incorrect, delete and fix the model, then regenerate
+   # If correct, proceed to step 4
+   
+   # STEP 4: Apply migration to database
+   alembic upgrade head
+   ```
+
+5. **If migration generation fails or is incorrect**:
+   - Delete the generated migration file
+   - Fix the model (use `server_default=` instead of `default=` for DB defaults)
+   - Ensure model is imported in `alembic/env.py`
+   - Regenerate the migration
+
+6. **Never manually write migration code** unless:
+   - Data migrations (moving/transforming data)
+   - Complex operations that autogenerate can't handle
+   - In these cases, document why manual migration was necessary
+
 ### Example Model Pattern
 ```python
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.sql import func, text
 from sqlalchemy.orm import relationship
-from datetime import datetime
 
 class Student(Base):
     __tablename__ = "students"
     
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
     admission_number = Column(String(50), unique=True, nullable=False, index=True)
     first_name = Column(String(100), nullable=False)
@@ -321,11 +377,13 @@ class Student(Base):
     school = relationship("School", back_populates="students")
     enrollments = relationship("Enrollment", back_populates="student")
     
-    # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    is_deleted = Column(Boolean, default=False)
+    # Metadata - Use server_default for database-level defaults (Alembic will detect these)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True)
+    is_deleted = Column(Boolean, server_default=text("false"), nullable=False, index=True)
 ```
+
+**Important**: Use `server_default=` for database-level defaults (detected by Alembic autogenerate), not `default=` (Python-level, not detected).
 
 ---
 

@@ -15,6 +15,7 @@ sys.path.insert(0, str(backend_dir))
 # Import your models here when they're created
 from shared.database.base import Base
 from school_service.models.school import School  # noqa: F401
+from school_service.models.user import User  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config
@@ -50,7 +51,12 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
