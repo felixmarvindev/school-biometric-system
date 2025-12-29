@@ -111,7 +111,11 @@ Located in: `frontend/components/ui/`
 
 ## Color Schemes
 
-### Primary Colors
+**CRITICAL: ALWAYS follow the Theme & Color System rules**
+
+**ALWAYS reference** `.cursor/rules/theme-color-system.mdc` for the complete color system and usage guidelines.
+
+### Quick Reference
 
 - **Blue** (`blue-500` to `blue-700`): Primary actions, links, required fields
 - **Indigo** (`indigo-500` to `indigo-700`): Secondary actions, accents
@@ -126,7 +130,7 @@ Located in: `frontend/components/ui/`
 className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
 
 // Dark mode
-className="bg-gradient-to-br from-blue-950/20 via-indigo-950/20 to-purple-950/20"
+className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
 ```
 
 ### Glassmorphism

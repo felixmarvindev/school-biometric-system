@@ -939,8 +939,8 @@ When the user needs to run commands:
 1. **NEVER** use `run_terminal_cmd` tool automatically
 2. **ALWAYS** provide commands in a clear, formatted code block
 3. **ALWAYS** explain what each command does
-4. **ALWAYS** wait for the user to run commands and confirm completion
-5. **ONLY** run commands if explicitly requested by the user
+4. **ALWAYS** wait for the user to run commands themselves
+5. **ONLY** run commands if explicitly requested by the user with phrases like "run this" or "execute this"
 
 **Format for providing commands:**
 ```bash
@@ -954,6 +954,35 @@ another-command
 **Exceptions:**
 - Reading files, searching codebase, or other non-execution tools are fine
 - Only run commands if user explicitly says "run this" or "execute this"
+
+---
+
+## Documentation File Creation Policy
+
+**CRITICAL: Do NOT create markdown/documentation files without explicit approval**
+
+When documentation is needed:
+1. **NEVER** create `.md` files automatically for small tasks or temporary notes
+2. **ALWAYS** ask for explicit approval before creating documentation files
+3. **ONLY** create documentation files when:
+   - User explicitly requests it (e.g., "create documentation for X")
+   - It's part of an accepted task that requires documentation
+   - User gives explicit "go ahead" or approval
+4. **AVOID** creating files like:
+   - `SETUP.md`, `NOTES.md`, `TEMP.md` for temporary information
+   - Multiple small documentation files for minor features
+   - Redundant documentation that duplicates existing files
+
+**When documentation IS appropriate:**
+- Comprehensive guides (design patterns, architecture decisions)
+- API documentation that's part of the project structure
+- Setup instructions that are part of the project requirements
+- User-facing documentation explicitly requested
+
+**Format for requesting approval:**
+- "Should I create a documentation file for [topic]?"
+- "Would you like me to document [feature] in a markdown file?"
+- Wait for explicit "yes", "go ahead", or "create it" before proceeding
 
 ---
 

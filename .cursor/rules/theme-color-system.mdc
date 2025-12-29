@@ -1,0 +1,458 @@
+---
+alwaysApply: true
+---
+
+# Theme & Color System Rules
+
+## CRITICAL: Uniform Color Usage
+
+**ALWAYS use the defined color system below. NEVER create custom color combinations or deviate from this palette.**
+
+---
+
+## Primary Color Palette
+
+### Brand Colors
+
+**ALWAYS use these exact colors for brand elements:**
+
+```typescript
+// Primary Brand Colors
+blue-500    // Primary actions, main CTAs, links
+blue-600    // Primary hover states, active states
+blue-700    // Primary pressed states, emphasis
+
+indigo-500  // Secondary actions, accents
+indigo-600  // Secondary hover states
+indigo-700  // Secondary pressed states
+
+purple-500  // Tertiary actions, optional fields
+purple-600  // Tertiary hover states
+purple-700  // Tertiary pressed states
+```
+
+### Semantic Colors
+
+**ALWAYS use these for semantic meanings:**
+
+```typescript
+// Success
+green-500   // Success messages, completed states
+green-600   // Success hover states
+
+// Warning
+yellow-500  // Warning messages, caution states
+yellow-600  // Warning hover states
+
+// Error/Destructive
+red-500     // Error messages, destructive actions
+red-600     // Error hover states, destructive hover
+
+// Info
+blue-500    // Info messages (same as primary)
+blue-600    // Info hover states
+```
+
+---
+
+## Background Colors
+
+### Page Backgrounds
+
+**ALWAYS use these gradient patterns for page backgrounds:**
+
+```typescript
+// Light Mode - Page Background
+className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+
+// Dark Mode - Page Background
+className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+// OR
+className="bg-gradient-to-br from-blue-950/20 via-indigo-950/20 to-purple-950/20"
+```
+
+**DO NOT use:**
+- ❌ Solid colors for page backgrounds
+- ❌ Different gradient directions
+- ❌ Different color combinations
+- ❌ `bg-white` or `bg-gray-100` for full page backgrounds
+
+### Card Backgrounds
+
+**ALWAYS use glassmorphism for cards:**
+
+```typescript
+// Light Mode - Cards
+className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm"
+
+// Dark Mode - Cards
+className="bg-gray-800/80 backdrop-blur-sm"
+```
+
+**With borders:**
+```typescript
+className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50"
+```
+
+---
+
+## Text Colors
+
+### Primary Text
+
+**ALWAYS use semantic text colors:**
+
+```typescript
+// Primary text (body, headings)
+className="text-foreground"           // Uses CSS variable
+className="text-gray-900 dark:text-gray-100"
+
+// Secondary text (descriptions, hints)
+className="text-muted-foreground"     // Uses CSS variable
+className="text-gray-600 dark:text-gray-400"
+
+// Muted text (subtle, disabled)
+className="text-gray-500 dark:text-gray-500"
+```
+
+### Gradient Text
+
+**For emphasis and headings, use gradient text:**
+
+```typescript
+// Primary gradient (most common)
+className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+
+// Alternative gradient
+className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600"
+```
+
+**DO NOT use:**
+- ❌ Solid colors for headings (use gradients instead)
+- ❌ Different gradient directions
+- ❌ More than 2 colors in a gradient
+
+---
+
+## Button Colors
+
+### Primary Buttons
+
+**ALWAYS use these button variants:**
+
+```typescript
+// Primary action button
+<Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+  Primary Action
+</Button>
+
+// Secondary action button
+<Button variant="secondary" className="bg-indigo-600 hover:bg-indigo-700">
+  Secondary Action
+</Button>
+
+// Destructive action button
+<Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+  Delete
+</Button>
+
+// Outline button
+<Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+  Outline Action
+</Button>
+```
+
+---
+
+## Form Field Colors
+
+### Input Fields
+
+**ALWAYS use these for form inputs:**
+
+```typescript
+// Required fields - use blue accent
+className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+
+// Optional fields - use purple accent
+className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+
+// Error states - use red
+className="border-red-500 focus:border-red-600 focus:ring-red-500"
+
+// Success states - use green
+className="border-green-500 focus:border-green-600 focus:ring-green-500"
+```
+
+### Labels
+
+```typescript
+// Required field labels
+className="text-blue-700 dark:text-blue-400"
+
+// Optional field labels
+className="text-gray-700 dark:text-gray-300"
+
+// Error labels
+className="text-red-600 dark:text-red-400"
+```
+
+---
+
+## Status Colors
+
+### Status Indicators
+
+**ALWAYS use these for status:**
+
+```typescript
+// Success/Active/Online
+className="bg-green-500 text-white"
+className="text-green-600"
+
+// Warning/Pending
+className="bg-yellow-500 text-white"
+className="text-yellow-600"
+
+// Error/Offline/Inactive
+className="bg-red-500 text-white"
+className="text-red-600"
+
+// Info
+className="bg-blue-500 text-white"
+className="text-blue-600"
+```
+
+---
+
+## Border Colors
+
+**ALWAYS use these for borders:**
+
+```typescript
+// Default borders
+className="border-gray-200 dark:border-gray-700"
+
+// Accent borders
+className="border-blue-300 dark:border-blue-700"
+
+// Error borders
+className="border-red-300 dark:border-red-700"
+
+// Subtle borders (glassmorphism)
+className="border-gray-200/50 dark:border-gray-700/50"
+```
+
+---
+
+## Shadow Colors
+
+**ALWAYS use these shadow patterns:**
+
+```typescript
+// Default shadow
+className="shadow-lg"
+
+// Colored shadows (for cards with brand colors)
+className="shadow-lg shadow-blue-500/10"
+
+// Hover shadow
+className="shadow-xl hover:shadow-2xl"
+
+// Dark mode shadows
+className="shadow-lg dark:shadow-gray-900/50"
+```
+
+---
+
+## Animated Background Shapes
+
+**ALWAYS use these for decorative background shapes:**
+
+```typescript
+// Primary shape (blue)
+className="bg-blue-400/20 rounded-full blur-3xl"
+
+// Secondary shape (purple)
+className="bg-purple-400/20 rounded-full blur-3xl"
+
+// Tertiary shape (indigo)
+className="bg-indigo-400/10 rounded-full blur-3xl"
+```
+
+**Opacity guidelines:**
+- Large shapes: `/20` or `/30`
+- Medium shapes: `/10` or `/15`
+- Small shapes: `/5` or `/10`
+
+---
+
+## Dark Mode Support
+
+**ALWAYS provide dark mode variants:**
+
+```typescript
+// Pattern: light-mode dark:dark-mode
+className="bg-white dark:bg-gray-800"
+className="text-gray-900 dark:text-gray-100"
+className="border-gray-200 dark:border-gray-700"
+```
+
+**DO NOT:**
+- ❌ Use only light mode colors
+- ❌ Forget dark mode variants
+- ❌ Use hardcoded colors without dark variants
+
+---
+
+## Color Usage Guidelines
+
+### When to Use Each Color
+
+**Blue (Primary):**
+- Primary buttons and CTAs
+- Links and navigation
+- Required form fields
+- Primary actions
+- Main brand elements
+
+**Indigo (Secondary):**
+- Secondary buttons
+- Accent elements
+- Secondary navigation
+- Supporting UI elements
+
+**Purple (Tertiary):**
+- Optional form fields
+- Special sections
+- Tertiary actions
+- Decorative elements
+
+**Red (Destructive):**
+- Delete actions
+- Error messages
+- Validation errors
+- Warning states (critical)
+
+**Green (Success):**
+- Success messages
+- Completed states
+- Positive feedback
+- Active/online indicators
+
+**Yellow (Warning):**
+- Warning messages
+- Pending states
+- Caution indicators
+
+---
+
+## Prohibited Practices
+
+**NEVER do these:**
+
+1. ❌ Use random color combinations
+2. ❌ Create custom color classes outside this system
+3. ❌ Use Tailwind's arbitrary values for colors (e.g., `bg-[#ff5733]`)
+4. ❌ Mix different color systems (e.g., using both blue-500 and sky-500)
+5. ❌ Use colors that don't have dark mode variants
+6. ❌ Create page backgrounds without gradients
+7. ❌ Use solid backgrounds for cards (use glassmorphism)
+8. ❌ Forget to add dark mode support
+
+---
+
+## Examples
+
+### Correct Usage
+
+```typescript
+// ✅ Correct: Using defined gradient background
+<div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+  <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+    <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+      Title
+    </h1>
+    <Button className="bg-blue-600 hover:bg-blue-700">
+      Action
+    </Button>
+  </Card>
+</div>
+```
+
+### Incorrect Usage
+
+```typescript
+// ❌ Wrong: Using arbitrary colors
+<div className="bg-[#f0f0f0]">
+  <Card className="bg-white">
+    <h1 className="text-[#333]">
+      Title
+    </h1>
+    <Button className="bg-[#007bff]">
+      Action
+    </Button>
+  </Card>
+</div>
+
+// ❌ Wrong: Using different color system
+<div className="bg-sky-50">
+  <Card className="bg-emerald-50">
+    <Button className="bg-cyan-600">
+      Action
+    </Button>
+  </Card>
+</div>
+```
+
+---
+
+## Quick Reference
+
+### Most Common Patterns
+
+```typescript
+// Page wrapper
+className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+
+// Card container
+className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 dark:border-gray-700/50"
+
+// Primary heading
+className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+
+// Primary button
+className="bg-blue-600 hover:bg-blue-700 text-white"
+
+// Secondary button
+className="bg-indigo-600 hover:bg-indigo-700 text-white"
+
+// Input field (required)
+className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+
+// Input field (optional)
+className="border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+```
+
+---
+
+## Color Token Reference
+
+For consistency, always reference colors by their semantic meaning:
+
+| Semantic | Light Mode | Dark Mode | Usage |
+|----------|------------|-----------|-------|
+| Primary | `blue-600` | `blue-400` | Main actions |
+| Secondary | `indigo-600` | `indigo-400` | Secondary actions |
+| Tertiary | `purple-600` | `purple-400` | Optional elements |
+| Success | `green-600` | `green-400` | Success states |
+| Warning | `yellow-600` | `yellow-400` | Warnings |
+| Error | `red-600` | `red-400` | Errors |
+| Background | `blue-50` → `purple-50` | `gray-900` → `gray-800` | Page background |
+| Card | `white/80` | `gray-800/80` | Card background |
+| Text Primary | `gray-900` | `gray-100` | Main text |
+| Text Secondary | `gray-600` | `gray-400` | Secondary text |
+
+---
+
+**Last Updated**: 2024-01-XX
