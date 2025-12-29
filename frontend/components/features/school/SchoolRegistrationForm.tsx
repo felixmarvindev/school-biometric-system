@@ -20,6 +20,7 @@
 
 'use client';
 
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
@@ -52,6 +53,7 @@ interface SchoolRegistrationFormProps {
   onSubmit: (data: SchoolRegistrationFormData) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  fieldErrors?: Record<string, string>;
   onSuccess?: () => void;
 }
 
@@ -62,6 +64,7 @@ export function SchoolRegistrationForm({
   onSubmit,
   isLoading = false,
   error = null,
+  fieldErrors = {},
   onSuccess,
 }: SchoolRegistrationFormProps) {
   const form = useForm<SchoolRegistrationFormData>({
@@ -75,13 +78,28 @@ export function SchoolRegistrationForm({
     },
   });
 
+  // Apply field-level errors from API to form fields
+  React.useEffect(() => {
+    if (Object.keys(fieldErrors).length > 0) {
+      Object.entries(fieldErrors).forEach(([field, message]) => {
+        form.setError(field as keyof SchoolRegistrationFormData, {
+          type: 'server',
+          message,
+        });
+      });
+    }
+  }, [fieldErrors, form]);
+
   const handleSubmit = async (data: SchoolRegistrationFormData) => {
     try {
+      // Clear any previous field errors
+      form.clearErrors();
       await onSubmit(data);
       form.reset();
       onSuccess?.();
     } catch (err) {
       // Error handling is done by parent component
+      // Field-level errors will be set via fieldErrors prop
       console.error('Form submission error:', err);
     }
   };
