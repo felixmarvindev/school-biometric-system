@@ -1,0 +1,1039 @@
+---
+alwaysApply: true
+---
+
+# School Biometric Management System - Cursor AI Rules
+
+## Project Overview
+
+You are working on a **School Biometric Management System** - a comprehensive platform for automated student attendance tracking using biometric fingerprint devices. This is a greenfield project built for primary and secondary schools in Kenya.
+
+### Core Purpose
+- Automated fingerprint-based attendance tracking
+- Remote enrollment of students on biometric devices
+- Real-time parent notifications via SMS
+- Scalable foundation for full school management platform
+
+### Key Differentiator
+The system provides **automated remote fingerprint enrollment** - administrators can enroll students from the web interface without manually operating the biometric device. This is the standout feature.
+
+---
+
+## Technology Stack
+
+### Frontend
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **State Management**: Zustand or React Context
+- **Real-time**: WebSocket (Socket.io client)
+- **Forms**: React Hook Form + Zod validation
+- **HTTP Client**: Axios or native fetch with TanStack Query
+
+### Backend
+- **Framework**: FastAPI (Python 3.11+)
+- **Architecture**: Microservices
+- **Database**: PostgreSQL 15+
+- **Cache/Queue**: Redis
+- **ORM**: SQLAlchemy 2.0+ with async support
+- **Validation**: Pydantic v2
+- **WebSocket**: python-socketio
+- **Task Queue**: Celery (for background jobs)
+- **Device SDK**: ZKTeco Python library (pre-existing)
+
+### DevOps
+- **Containerization**: Docker + Docker Compose
+- **API Documentation**: Auto-generated via FastAPI (OpenAPI/Swagger)
+- **Environment Management**: python-dotenv
+- **Process Manager**: Uvicorn with Gunicorn for production
+
+---
+
+## Architecture Principles
+
+### Microservices Structure
+
+```
+┌─────────────┐
+│   Next.js   │
+│  Frontend   │
+└──────┬──────┘
+       │ REST/WebSocket
+       ▼
+┌─────────────────┐
+│  API Gateway    │
+│   (FastAPI)     │
+└────────┬────────┘
+         │
+    ┌────┴─────────────┬─────────────┬──────────────┐
+    ▼                  ▼             ▼              ▼
+┌────────┐      ┌──────────┐  ┌──────────┐  ┌────────────┐
+│ School │      │  Device  │  │Attendance│  │Notification│
+│Service │      │  Service │  │ Service  │  │  Service   │
+└────────┘      └──────────┘  └──────────┘  └────────────┘
+                      │
+                      ▼
+              ┌──────────────┐
+              │ ZKTeco Device│
+              │   Hardware   │
+              └──────────────┘
+```
+
+### Service Responsibilities
+
+1. **API Gateway Service**
+   - Single entry point for frontend
+   - Request routing to appropriate services
+   - Authentication & authorization
+   - Rate limiting
+   - WebSocket management
+
+2. **School Management Service**
+   - Schools, students, classes, streams CRUD
+   - Academic structure management
+   - User/admin management
+   - Parent contact information
+
+3. **Device Orchestration Service**
+   - Device registration and management
+   - Device health monitoring (online/offline)
+   - Enrollment coordination
+   - Sync operations (student ↔ device mapping)
+   - **Integrates with ZKTeco library**
+   - Simulation mode for demos
+
+4. **Attendance Service**
+   - Attendance event processing
+   - Attendance records storage
+   - Entry/Exit determination logic
+   - Reporting and analytics
+
+5. **Notification Service**
+   - SMS gateway integration (Africa's Talking)
+   - Parent notification queue
+   - Message templating
+   - Delivery status tracking
+
+---
+
+## Development Standards
+
+### Python (Backend)
+
+#### Code Style
+- Follow PEP 8
+- Use `black` for formatting (line length: 100)
+- Use `isort` for import sorting
+- Use `mypy` for type checking
+- Use `pylint` or `ruff` for linting
+
+#### Naming Conventions
+- **Files**: lowercase with underscores (`user_service.py`)
+- **Classes**: PascalCase (`StudentRepository`)
+- **Functions**: snake_case (`get_student_by_id`)
+- **Constants**: UPPER_SNAKE_CASE (`MAX_ENROLLMENT_ATTEMPTS`)
+- **Private methods**: prefix with underscore (`_validate_fingerprint`)
+
+#### FastAPI Structure
+```python
+# Each service follows this structure:
+service/
+├── __init__.py
+├── main.py              # FastAPI app initialization
+├── api/
+│   ├── __init__.py
+│   ├── routes/          # API endpoints
+│   │   ├── students.py
+│   │   └── enrollment.py
+│   └── dependencies.py  # Dependency injection
+├── core/
+│   ├── config.py        # Environment config
+│   ├── security.py      # Auth helpers
+│   └── database.py      # DB connection
+├── models/
+│   ├── domain.py        # Business entities
+│   └── database.py      # SQLAlchemy models
+├── schemas/
+│   └── student.py       # Pydantic models (DTOs)
+├── repositories/
+│   └── student_repo.py  # Data access layer
+├── services/
+│   └── student_service.py # Business logic
+└── tests/
+    └── test_students.py
+```
+
+#### Type Hints (Required)
+```python
+from typing import Optional, List
+from pydantic import BaseModel
+
+async def get_student(student_id: int) -> Optional[Student]:
+    ...
+
+def calculate_attendance_rate(
+    student_id: int, 
+    start_date: date, 
+    end_date: date
+) -> float:
+    ...
+```
+
+#### Async/Await Patterns
+- Use `async def` for I/O operations (DB, HTTP, device communication)
+- Use `await` for async calls
+- Prefer `asyncio.gather()` for parallel operations
+
+```python
+# Good
+async def enroll_student_bulk(student_ids: List[int], device_id: int):
+    tasks = [enroll_student(sid, device_id) for sid in student_ids]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    return results
+
+# Bad - sequential when could be parallel
+async def enroll_student_bulk(student_ids: List[int], device_id: int):
+    results = []
+    for sid in student_ids:
+        result = await enroll_student(sid, device_id)
+        results.append(result)
+    return results
+```
+
+### TypeScript (Frontend)
+
+#### Code Style
+- ESLint + Prettier
+- Strict TypeScript mode
+- Prefer functional components with hooks
+- Use `const` over `let`, never use `var`
+
+#### Naming Conventions
+- **Components**: PascalCase (`StudentEnrollmentForm.tsx`)
+- **Hooks**: camelCase with `use` prefix (`useStudentEnrollment`)
+- **Utils**: camelCase (`formatAttendanceTime`)
+- **Constants**: UPPER_SNAKE_CASE (`API_BASE_URL`)
+- **Types/Interfaces**: PascalCase (`StudentDTO`, `EnrollmentResponse`)
+
+#### Component Structure
+```typescript
+// StudentCard.tsx
+import { FC } from 'react';
+
+interface StudentCardProps {
+  student: Student;
+  onEnroll: (studentId: number) => void;
+  isEnrolling?: boolean;
+}
+
+export const StudentCard: FC<StudentCardProps> = ({ 
+  student, 
+  onEnroll, 
+  isEnrolling = false 
+}) => {
+  // Hooks first
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Event handlers
+  const handleEnrollClick = () => {
+    onEnroll(student.id);
+  };
+  
+  // Render
+  return (
+    <div className="...">
+      {/* JSX */}
+    </div>
+  );
+};
+```
+
+#### API Client Pattern
+```typescript
+// lib/api/students.ts
+import { z } from 'zod';
+
+const StudentSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  admissionNumber: z.string(),
+  // ...
+});
+
+export type Student = z.infer<typeof StudentSchema>;
+
+export const studentsApi = {
+  getAll: async (): Promise<Student[]> => {
+    const response = await fetch('/api/students');
+    const data = await response.json();
+    return z.array(StudentSchema).parse(data);
+  },
+  
+  enroll: async (studentId: number, deviceId: number): Promise<void> => {
+    await fetch('/api/enrollment', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, deviceId }),
+    });
+  },
+};
+```
+
+---
+
+## Database Schema Guidelines
+
+### Naming Conventions
+- **Tables**: plural, snake_case (`students`, `attendance_records`)
+- **Columns**: snake_case (`first_name`, `created_at`)
+- **Foreign Keys**: `{table}_id` (`school_id`, `class_id`)
+- **Junction Tables**: `{table1}_{table2}` (`student_devices`)
+
+### Required Fields on All Tables
+```sql
+id BIGSERIAL PRIMARY KEY,
+created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+is_deleted BOOLEAN DEFAULT FALSE  -- Soft delete
+```
+
+### Indexing Strategy
+- Index all foreign keys
+- Index frequently queried columns (`admission_number`, `device_serial`)
+- Composite indexes for common query patterns
+- Consider partial indexes for soft-deleted records
+
+### Example Model Pattern
+```python
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime
+
+class Student(Base):
+    __tablename__ = "students"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    school_id = Column(Integer, ForeignKey("schools.id"), nullable=False, index=True)
+    admission_number = Column(String(50), unique=True, nullable=False, index=True)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    
+    # Relationships
+    school = relationship("School", back_populates="students")
+    enrollments = relationship("Enrollment", back_populates="student")
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_deleted = Column(Boolean, default=False)
+```
+
+---
+
+## ZKTeco Device Integration
+
+### Library Location
+The ZKTeco Python library is located in `/device-service/zk/` with these key modules:
+- `base.py` - Main ZK class for device communication
+- `user.py` - User management on device
+- `finger.py` - Fingerprint template handling
+- `attendance.py` - Attendance record structure
+- `const.py` - Command constants
+
+### Key Commands to Use
+```python
+CMD_STARTENROLL = 61      # Start fingerprint enrollment
+CMD_CANCELCAPTURE = 62    # Cancel enrollment
+CMD_ATTLOG_RRQ = 13       # Read attendance logs
+CMD_USER_WRQ = 8          # Upload user to device
+CMD_DELETE_USER = 18      # Delete user from device
+CMD_GET_FREE_SIZES = 50   # Get device capacity
+CMD_REG_EVENT = 500       # Register for real-time events
+```
+
+### Event Flags
+```python
+EF_ATTLOG = 1             # Attendance event
+EF_ENROLLFINGER = (1<<3)  # Enrollment event
+EF_ALARM = (1<<9)         # Alarm signal
+```
+
+### Integration Pattern
+```python
+from zk import ZK
+
+class DeviceManager:
+    def __init__(self, ip: str, port: int = 4370):
+        self.ip = ip
+        self.port = port
+        self.zk = ZK(ip, port, timeout=5, password=0, ommit_ping=False)
+        self.conn = None
+    
+    async def connect(self) -> bool:
+        """Establish connection to device"""
+        try:
+            self.conn = await asyncio.to_thread(self.zk.connect)
+            return True
+        except Exception as e:
+            logger.error(f"Connection failed: {e}")
+            return False
+    
+    async def start_enrollment(self, user_id: int, finger_id: int = 0) -> dict:
+        """
+        Initiate remote fingerprint enrollment
+        
+        Args:
+            user_id: Student's ID in device
+            finger_id: Finger index (0-9)
+        
+        Returns:
+            dict with success status and message
+        """
+        if not self.conn:
+            await self.connect()
+        
+        try:
+            # Put device in enrollment mode
+            await asyncio.to_thread(
+                self.conn.start_enrollment,
+                user_id=user_id,
+                finger_id=finger_id
+            )
+            
+            # Register for enrollment events
+            await asyncio.to_thread(
+                self.conn.reg_event,
+                EF_ENROLLFINGER
+            )
+            
+            return {
+                "success": True,
+                "message": "Device ready for enrollment",
+                "user_id": user_id,
+                "finger_id": finger_id
+            }
+        except Exception as e:
+            logger.error(f"Enrollment start failed: {e}")
+            return {"success": False, "message": str(e)}
+    
+    async def listen_for_events(self, callback):
+        """Listen for real-time device events"""
+        while True:
+            try:
+                events = await asyncio.to_thread(self.conn.poll_events)
+                for event in events:
+                    await callback(event)
+            except Exception as e:
+                logger.error(f"Event polling error: {e}")
+                await asyncio.sleep(5)
+```
+
+---
+
+## Simulation Mode (Critical for Demos)
+
+### Feature Flag Pattern
+```python
+# config.py
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    SIMULATION_MODE: bool = True  # Toggle for demo vs production
+    SIMULATION_DELAY_MIN: float = 1.0  # Min delay in seconds
+    SIMULATION_DELAY_MAX: float = 3.0  # Max delay in seconds
+
+settings = Settings()
+```
+
+### Device Interface Abstraction
+```python
+from abc import ABC, abstractmethod
+
+class DeviceInterface(ABC):
+    @abstractmethod
+    async def connect(self) -> bool:
+        pass
+    
+    @abstractmethod
+    async def start_enrollment(self, user_id: int, finger_id: int) -> dict:
+        pass
+    
+    @abstractmethod
+    async def get_attendance_logs(self) -> List[AttendanceRecord]:
+        pass
+
+class RealDevice(DeviceInterface):
+    """Actual ZKTeco device communication"""
+    # ... uses ZK library
+    
+class SimulatedDevice(DeviceInterface):
+    """Mock device for demos"""
+    
+    async def start_enrollment(self, user_id: int, finger_id: int) -> dict:
+        # Simulate realistic delay
+        delay = random.uniform(
+            settings.SIMULATION_DELAY_MIN,
+            settings.SIMULATION_DELAY_MAX
+        )
+        await asyncio.sleep(delay)
+        
+        # Simulate success/failure (95% success rate)
+        success = random.random() > 0.05
+        
+        if success:
+            # Emit simulated event
+            await self.emit_enrollment_event(user_id, finger_id)
+            return {"success": True, "message": "Simulated enrollment complete"}
+        else:
+            return {"success": False, "message": "Simulated enrollment failed"}
+
+# Factory
+def get_device(ip: str, simulation: bool = settings.SIMULATION_MODE):
+    if simulation:
+        return SimulatedDevice(ip)
+    return RealDevice(ip)
+```
+
+---
+
+## Real-time Communication (WebSocket)
+
+### Backend (FastAPI + Socket.IO)
+```python
+from socketio import AsyncServer
+from fastapi import FastAPI
+
+sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app = FastAPI()
+socket_app = socketio.ASGIApp(sio, app)
+
+@sio.event
+async def connect(sid, environ):
+    print(f"Client {sid} connected")
+
+@sio.event
+async def disconnect(sid):
+    print(f"Client {sid} disconnected")
+
+# Emit enrollment progress
+async def notify_enrollment_progress(student_id: int, status: str, progress: int):
+    await sio.emit('enrollment_progress', {
+        'student_id': student_id,
+        'status': status,
+        'progress': progress,
+        'timestamp': datetime.utcnow().isoformat()
+    })
+```
+
+### Frontend (Socket.IO Client)
+```typescript
+// lib/socket.ts
+import { io, Socket } from 'socket.io-client';
+
+let socket: Socket | null = null;
+
+export const initSocket = () => {
+  if (!socket) {
+    socket = io(process.env.NEXT_PUBLIC_WS_URL!, {
+      transports: ['websocket'],
+    });
+  }
+  return socket;
+};
+
+export const subscribeToEnrollment = (
+  callback: (data: EnrollmentProgress) => void
+) => {
+  const socket = initSocket();
+  socket.on('enrollment_progress', callback);
+  
+  return () => {
+    socket.off('enrollment_progress', callback);
+  };
+};
+
+// Usage in component
+useEffect(() => {
+  const unsubscribe = subscribeToEnrollment((data) => {
+    console.log('Enrollment progress:', data);
+    setEnrollmentStatus(data);
+  });
+  
+  return unsubscribe;
+}, []);
+```
+
+---
+
+## Error Handling Standards
+
+### Backend
+```python
+from fastapi import HTTPException, status
+from typing import Optional
+
+class AppException(Exception):
+    """Base exception"""
+    def __init__(self, message: str, code: Optional[str] = None):
+        self.message = message
+        self.code = code
+        super().__init__(self.message)
+
+class StudentNotFound(AppException):
+    def __init__(self, student_id: int):
+        super().__init__(
+            message=f"Student with ID {student_id} not found",
+            code="STUDENT_NOT_FOUND"
+        )
+
+class DeviceOffline(AppException):
+    def __init__(self, device_id: int):
+        super().__init__(
+            message=f"Device {device_id} is offline",
+            code="DEVICE_OFFLINE"
+        )
+
+# Exception handler
+@app.exception_handler(AppException)
+async def app_exception_handler(request, exc: AppException):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "error": {
+                "message": exc.message,
+                "code": exc.code
+            }
+        }
+    )
+```
+
+### Frontend
+```typescript
+// lib/errors.ts
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+export const handleApiError = (error: unknown): string => {
+  if (error instanceof ApiError) {
+    switch (error.code) {
+      case 'STUDENT_NOT_FOUND':
+        return 'Student not found in the system';
+      case 'DEVICE_OFFLINE':
+        return 'Device is currently offline. Please try again later.';
+      default:
+        return error.message;
+    }
+  }
+  
+  return 'An unexpected error occurred';
+};
+```
+
+---
+
+## Environment Configuration
+
+### Backend (.env)
+```bash
+# Database
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/school_biometric
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Security
+SECRET_KEY=your-secret-key-here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Device Settings
+SIMULATION_MODE=true
+DEFAULT_DEVICE_TIMEOUT=5
+
+# SMS Gateway (Africa's Talking)
+AFRICASTALKING_USERNAME=sandbox
+AFRICASTALKING_API_KEY=your-api-key
+AFRICASTALKING_SENDER_ID=SchoolBio
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Logging
+LOG_LEVEL=INFO
+```
+
+### Frontend (.env.local)
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=http://localhost:8000
+NEXT_PUBLIC_APP_NAME=School Biometric System
+```
+
+---
+
+## Testing Standards
+
+### Backend (Pytest)
+```python
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@pytest.mark.asyncio
+async def test_create_student(client: AsyncClient, db: AsyncSession):
+    """Test student creation"""
+    payload = {
+        "admission_number": "STD2024001",
+        "first_name": "John",
+        "last_name": "Doe",
+        "school_id": 1,
+        "class_id": 5
+    }
+    
+    response = await client.post("/api/students", json=payload)
+    
+    assert response.status_code == 201
+    data = response.json()
+    assert data["admission_number"] == payload["admission_number"]
+    assert "id" in data
+
+@pytest.mark.asyncio
+async def test_device_enrollment_simulation(device_service):
+    """Test simulated enrollment"""
+    result = await device_service.start_enrollment(
+        student_id=1,
+        device_id=1,
+        simulation=True
+    )
+    
+    assert result["success"] is True
+    assert "message" in result
+```
+
+### Frontend (Jest + React Testing Library)
+```typescript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { EnrollmentButton } from './EnrollmentButton';
+
+describe('EnrollmentButton', () => {
+  it('should start enrollment on click', async () => {
+    const onEnroll = jest.fn();
+    
+    render(
+      <EnrollmentButton 
+        studentId={1} 
+        onEnroll={onEnroll} 
+      />
+    );
+    
+    const button = screen.getByRole('button', { name: /enroll/i });
+    fireEvent.click(button);
+    
+    await waitFor(() => {
+      expect(onEnroll).toHaveBeenCalledWith(1);
+    });
+  });
+});
+```
+
+---
+
+## Documentation Requirements
+
+### Code Comments
+- Use docstrings for all functions, classes, and modules
+- Include parameter types and return types
+- Add usage examples for complex functions
+
+```python
+async def enroll_student(
+    student_id: int,
+    device_id: int,
+    finger_id: int = 0,
+    db: AsyncSession = Depends(get_db)
+) -> EnrollmentResponse:
+    """
+    Initiate fingerprint enrollment for a student on a specific device.
+    
+    This function:
+    1. Validates student and device existence
+    2. Checks device online status
+    3. Initiates remote enrollment command
+    4. Returns enrollment session info
+    
+    Args:
+        student_id: ID of the student to enroll
+        device_id: ID of the target biometric device
+        finger_id: Finger index (0-9), defaults to 0 (right thumb)
+        db: Database session dependency
+    
+    Returns:
+        EnrollmentResponse containing session ID and status
+    
+    Raises:
+        StudentNotFound: If student_id doesn't exist
+        DeviceOffline: If device is not reachable
+        EnrollmentInProgress: If student already has active enrollment
+    
+    Example:
+        >>> result = await enroll_student(
+        ...     student_id=123,
+        ...     device_id=5,
+        ...     finger_id=0
+        ... )
+        >>> print(result.session_id)
+        'enr_abc123'
+    """
+    # Implementation
+```
+
+### API Documentation
+- FastAPI auto-generates OpenAPI docs
+- Add descriptions to all endpoints
+- Document request/response schemas
+
+```python
+@router.post(
+    "/students/{student_id}/enroll",
+    response_model=EnrollmentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start fingerprint enrollment",
+    description="""
+    Initiates fingerprint enrollment for a student on a biometric device.
+    
+    The device will enter enrollment mode and wait for the student to 
+    place their finger. Real-time progress updates are sent via WebSocket.
+    """,
+    responses={
+        201: {"description": "Enrollment started successfully"},
+        404: {"description": "Student or device not found"},
+        409: {"description": "Enrollment already in progress"},
+        503: {"description": "Device is offline"}
+    }
+)
+async def start_enrollment(...):
+    ...
+```
+
+---
+
+## Git Workflow
+
+### Branch Naming
+- `feature/` - New features (`feature/automated-enrollment`)
+- `bugfix/` - Bug fixes (`bugfix/device-connection-timeout`)
+- `hotfix/` - Urgent fixes (`hotfix/sms-gateway-crash`)
+- `refactor/` - Code improvements (`refactor/device-manager-cleanup`)
+
+### Commit Messages
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+Example:
+```
+feat(enrollment): add automated fingerprint enrollment
+
+- Implement remote enrollment command
+- Add WebSocket progress updates
+- Create enrollment status tracking
+- Add simulation mode for demos
+
+Closes #45
+```
+
+---
+
+## Performance Guidelines
+
+### Backend
+- Use async operations for I/O
+- Implement connection pooling for DB and Redis
+- Cache frequently accessed data
+- Use pagination for large datasets (default: 50 items)
+- Implement rate limiting (100 req/min per user)
+
+### Frontend
+- Lazy load components and routes
+- Implement virtual scrolling for large lists
+- Debounce search inputs (300ms)
+- Use React.memo for expensive components
+- Optimize images (next/image)
+
+---
+
+## Security Checklist
+
+- [ ] All passwords hashed (bcrypt, scrypt)
+- [ ] JWT tokens with expiration
+- [ ] HTTPS in production
+- [ ] CORS properly configured
+- [ ] SQL injection prevention (parameterized queries)
+- [ ] XSS prevention (input sanitization)
+- [ ] Rate limiting on sensitive endpoints
+- [ ] Audit logging for critical operations
+- [ ] Environment variables for secrets
+- [ ] Regular dependency updates
+
+---
+
+## Deployment Checklist
+
+### Pre-deployment
+- [ ] All tests passing
+- [ ] Environment variables configured
+- [ ] Database migrations applied
+- [ ] Static files built
+- [ ] Health check endpoints working
+- [ ] Logging configured
+- [ ] Backup strategy in place
+
+### Post-deployment
+- [ ] Verify all services are running
+- [ ] Check device connectivity
+- [ ] Test enrollment flow
+- [ ] Verify SMS delivery
+- [ ] Monitor error rates
+- [ ] Check database connections
+- [ ] Verify WebSocket connections
+
+---
+
+## Key Project Files to Create
+
+When starting, create these files first:
+
+### Backend
+1. `docker-compose.yml` - Local development stack
+2. `requirements.txt` - Python dependencies
+3. `alembic.ini` - Database migrations config
+4. `.env.example` - Environment variables template
+5. `README.md` - Setup instructions
+
+### Frontend
+1. `package.json` - Node dependencies
+2. `tsconfig.json` - TypeScript config
+3. `next.config.js` - Next.js config
+4. `tailwind.config.ts` - Tailwind setup
+5. `.env.local.example` - Environment template
+
+---
+
+## Command Execution Policy
+
+**CRITICAL: Do NOT automatically run terminal commands**
+
+When the user needs to run commands:
+1. **NEVER** use `run_terminal_cmd` tool automatically
+2. **ALWAYS** provide commands in a clear, formatted code block
+3. **ALWAYS** explain what each command does
+4. **ALWAYS** wait for the user to run commands and confirm completion
+5. **ONLY** run commands if explicitly requested by the user
+
+**Format for providing commands:**
+```bash
+# Explanation of what this does
+command-to-run
+
+# Another command with explanation
+another-command
+```
+
+**Exceptions:**
+- Reading files, searching codebase, or other non-execution tools are fine
+- Only run commands if user explicitly says "run this" or "execute this"
+
+---
+
+## Task Progress Tracking
+
+**CRITICAL: Always update task files when acceptance criteria are met**
+
+When a task's acceptance criteria are confirmed as complete:
+1. **ALWAYS** mark all completed acceptance criteria with `[x]` in the task file
+2. **ALWAYS** update the "Definition of Done" section with completed items
+3. **ALWAYS** verify all checkboxes match the actual completion status
+4. **ALWAYS** update the task file immediately after user confirms completion
+
+**Format for marking progress:**
+```markdown
+## Acceptance Criteria
+
+1. [x] First criteria - completed
+2. [x] Second criteria - completed
+3. [ ] Third criteria - not yet done
+```
+
+**When to update:**
+- After user confirms acceptance criteria are met
+- After completing a phase of work
+- Before moving to the next task
+- When user explicitly requests progress update
+
+**Files to update:**
+- Task markdown files in `docs/stories/*/tasks/`
+- Mark both "Acceptance Criteria" and "Definition of Done" sections
+
+---
+
+## Important Reminders
+
+1. **Always use type hints** in Python and TypeScript
+2. **Simulation mode first** - build demo capability before real device integration
+3. **WebSocket for real-time** - enrollment progress, attendance events
+4. **Soft deletes** - never hard delete student or attendance records
+5. **Audit trail** - log all critical operations (enrollment, sync, deletion)
+6. **Idempotency** - enrollment and sync operations should be safe to retry
+7. **Graceful degradation** - system should work even if devices are offline
+8. **Mobile-first** - many users will access from tablets/phones
+9. **Kenyan context** - SMS over email, consider network reliability
+10. **Demo readiness** - every feature should work in simulation mode
+
+---
+
+## Getting Help
+
+When asking Cursor AI for help:
+
+✅ Good prompts:
+- "Create a FastAPI endpoint to start enrollment with WebSocket updates"
+- "Generate SQLAlchemy models for the student-device enrollment relationship"
+- "Write a React component for real-time enrollment progress tracking"
+
+❌ Avoid:
+- "Make it work" (too vague)
+- Asking for entire features at once
+- Not specifying which service you're working in
+
+---
+
+## Project Success Metrics
+
+You'll know the project is on track when:
+
+1. ✅ A student can be enrolled from the web UI without touching the device
+2. ✅ Enrollment progress shows in real-time
+3. ✅ Attendance events are captured and stored
+4. ✅ Parents receive SMS notifications
+5. ✅ Demo mode works smoothly without real devices
+6. ✅ System can handle 500+ students per school
+7. ✅ Device offline/online status is accurately reflected
+8. ✅ API response time < 200ms for CRUD operations
+9. ✅ WebSocket latency < 100ms
+10. ✅ Zero data loss during device disconnection
+
+---
+
+END OF CURSOR AI RULES

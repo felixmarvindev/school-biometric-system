@@ -1,0 +1,248 @@
+---
+alwaysApply: true
+---
+
+# Frontend Design Patterns & Animation Rules
+
+## Animation Library
+
+**ALWAYS use Framer Motion** for all animations in the frontend. Do NOT use GSAP or other animation libraries unless explicitly requested.
+
+## Animation Patterns
+
+### Standard Variants
+
+All animation variants MUST be imported from `@/lib/animations`:
+
+```typescript
+import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
+```
+
+**Available variants:**
+- `fadeIn` - Simple fade in
+- `fadeInUp` - Fade in with slide up (most common)
+- `fadeInDown` - Fade in with slide down
+- `scaleIn` - Scale in animation (for cards, modals)
+- `slideInLeft` - Slide in from left
+- `slideInRight` - Slide in from right
+- `staggerContainer` - Container for staggered children
+- `staggerItem` - Item for staggered lists/grids
+- `pageTransition` - Page transition variants
+- `cardHover` - Card hover animation
+- `buttonPress` - Button press animation
+
+### Animation Timing
+
+**ALWAYS use these durations:**
+- Fast: `0.2s` - Micro-interactions, hover states
+- Normal: `0.3s` - Page transitions, card entrances (default)
+- Slow: `0.5s` - Complex animations, modal entrances
+- Slower: `0.8s` - Special effects, hero animations
+
+**Delay guidelines:**
+- First element: `0.1s`
+- Secondary elements: `0.2s`
+- Tertiary elements: `0.3s+`
+
+### Page Animations
+
+**ALWAYS animate page content** with fade-in and slide-up:
+
+```typescript
+import { motion } from 'framer-motion';
+import { fadeInUp } from '@/lib/animations';
+
+<motion.div
+  initial="hidden"
+  animate="visible"
+  variants={fadeInUp}
+  transition={{ delay: 0.2 }}
+>
+  Page content
+</motion.div>
+```
+
+### Staggered Lists/Grids
+
+**ALWAYS use staggered animations** for lists, grids, and form fields:
+
+```typescript
+import { staggerContainer, staggerItem } from '@/lib/animations';
+
+<motion.div
+  variants={staggerContainer}
+  initial="hidden"
+  animate="visible"
+  // or for scroll-triggered: whileInView="visible" viewport={{ once: true }}
+>
+  {items.map((item) => (
+    <motion.div key={item.id} variants={staggerItem}>
+      {item.content}
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+### Card Hover Effects
+
+**ALWAYS add hover animations** to interactive cards:
+
+```typescript
+<motion.div
+  variants={cardHover}
+  initial="rest"
+  whileHover="hover"
+  // or inline:
+  whileHover={{ scale: 1.02, y: -4 }}
+>
+  Card content
+</motion.div>
+```
+
+## Reusable Components
+
+**ALWAYS use pre-built animated components** when available:
+
+- `AnimatedSection` - For page sections
+- `AnimatedCard` - For cards with hover effects
+- `AnimatedButton` - For buttons with press animation
+
+Located in: `frontend/components/ui/`
+
+## Color Schemes
+
+### Primary Colors
+
+- **Blue** (`blue-500` to `blue-700`): Primary actions, links, required fields
+- **Indigo** (`indigo-500` to `indigo-700`): Secondary actions, accents
+- **Purple** (`purple-500` to `purple-700`): Optional fields, special sections
+
+### Background Gradients
+
+**ALWAYS use these gradient patterns:**
+
+```typescript
+// Light mode
+className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+
+// Dark mode
+className="bg-gradient-to-br from-blue-950/20 via-indigo-950/20 to-purple-950/20"
+```
+
+### Glassmorphism
+
+**ALWAYS use glassmorphism** for cards and overlays:
+
+```typescript
+className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg"
+```
+
+## Typography
+
+### Gradient Text
+
+**For emphasis**, use gradient text:
+
+```typescript
+className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"
+```
+
+## Accessibility
+
+### Reduced Motion
+
+**ALWAYS respect** `prefers-reduced-motion`:
+
+```typescript
+import { useReducedMotion } from 'framer-motion';
+
+const shouldReduceMotion = useReducedMotion();
+
+<motion.div
+  animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+>
+  Content
+</motion.div>
+```
+
+### Focus States
+
+**ALWAYS provide visible focus states:**
+
+```typescript
+className="focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+```
+
+## Component Structure
+
+### Page Component Pattern
+
+```typescript
+'use client';
+
+import { motion } from 'framer-motion';
+import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
+
+export default function PageName() {
+  return (
+    <div className="min-h-screen">
+      {/* Animated background shapes */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/30 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400/30 rounded-full blur-3xl animate-pulse delay-1000" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10">
+        <motion.header
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+        >
+          Header
+        </motion.header>
+
+        <main>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ delay: 0.2 }}
+          >
+            Main content
+          </motion.div>
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+## Performance
+
+### DO ✅
+
+- Use `transform` and `opacity` for animations
+- Use `will-change` sparingly (only when needed)
+- Use `viewport={{ once: true }}` for scroll-triggered animations
+- Keep animation durations short (≤ 0.5s for most cases)
+
+### DON'T ❌
+
+- Don't animate `width`, `height`, `top`, `left` (use `transform`)
+- Don't create custom animation variants without documenting them
+- Don't over-animate (less is more)
+- Don't ignore reduced motion preferences
+
+## Documentation
+
+**ALWAYS reference** `docs/frontend/design-patterns.md` for detailed patterns and examples.
+
+**When creating new animation patterns:**
+1. Add them to `frontend/lib/animations/framer-motion.ts`
+2. Document them in `docs/frontend/design-patterns.md`
+3. Update this cursor rule if needed
+
+---
+
+**Last Updated**: 2024-01-XX
