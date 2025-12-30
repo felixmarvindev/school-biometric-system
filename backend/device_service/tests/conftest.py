@@ -68,3 +68,23 @@ async def test_db() -> AsyncGenerator[AsyncSession, None]:
 
     await engine.dispose()
 
+
+@pytest.fixture
+async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create a test client with database dependency override."""
+    from device_service.main import app
+    from device_service.core.database import get_db
+    
+    # Override database dependency
+    async def override_get_db():
+        yield test_db
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Create async client
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        yield ac
+
+    # Clean up
+    app.dependency_overrides.clear()
+
