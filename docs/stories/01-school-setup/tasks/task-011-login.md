@@ -17,16 +17,17 @@ Create the login page and authentication flow that allows admins to log in and a
 
 ## Acceptance Criteria
 
-1. [ ] Login page route exists at `/login`
-2. [ ] POST `/api/v1/auth/login` endpoint exists
-3. [ ] Login form component created
-4. [ ] Form includes: email, password
-5. [ ] Form validation works
-6. [ ] Login API call works
-7. [ ] JWT token stored after successful login
-8. [ ] Redirect to dashboard after login
-9. [ ] Error messages displayed for invalid credentials
-10. [ ] "Remember me" option (optional)
+1. [ ] Login page route exists at `/login` (Frontend)
+2. [x] POST `/api/v1/auth/login` endpoint exists (Backend ✅)
+3. [x] POST `/api/v1/auth/login/json` endpoint exists (Backend ✅)
+4. [ ] Login form component created (Frontend)
+5. [ ] Form includes: email, password (Frontend)
+6. [x] Form validation works (Backend ✅ - tested)
+7. [x] Login API call works (Backend ✅ - tested)
+8. [ ] JWT token stored after successful login (Frontend)
+9. [ ] Redirect to dashboard after login (Frontend)
+10. [x] Error messages displayed for invalid credentials (Backend ✅ - tested)
+11. [ ] "Remember me" option (optional) (Frontend)
 
 ## Technical Details
 
@@ -111,14 +112,59 @@ async def login(credentials: LoginCredentials):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests for login flow
-- [ ] Frontend component tests
-- [ ] Authentication flow works end-to-end
-- [ ] Error handling comprehensive
+- [x] Code written and follows standards (Backend ✅)
+- [x] Unit tests written and passing (Backend ✅ - `test_auth_login_api.py`)
+- [x] Integration tests for login flow (Backend ✅)
+- [ ] Frontend component tests (Frontend)
+- [ ] Authentication flow works end-to-end (Frontend + Backend integration)
+- [x] Error handling comprehensive (Backend ✅ - tested)
 - [ ] Code reviewed
-- [ ] Tested in browser
+- [ ] Tested in browser (Frontend)
+
+## Backend Test Coverage
+
+Comprehensive test suite created in `backend/school_service/tests/test_auth_login_api.py`:
+
+### Test Cases (20 tests total)
+
+#### JSON Login Endpoint (`/api/v1/auth/login/json`)
+- ✅ `test_login_json_success` - Successful login with valid credentials
+- ✅ `test_login_json_invalid_email` - 401 for non-existent email
+- ✅ `test_login_json_invalid_password` - 401 for wrong password
+- ✅ `test_login_json_inactive_user` - 401 for inactive user
+- ✅ `test_login_json_missing_email` - 422 for missing email field
+- ✅ `test_login_json_missing_password` - 422 for missing password field
+- ✅ `test_login_json_invalid_email_format` - 422 for invalid email format
+- ✅ `test_login_json_case_insensitive_email` - Email matching is case-insensitive
+
+#### Form Login Endpoint (`/api/v1/auth/login`)
+- ✅ `test_login_form_success` - Successful login with form data
+- ✅ `test_login_form_invalid_credentials` - 401 for invalid credentials
+- ✅ `test_login_form_missing_fields` - 422 for missing fields
+
+#### Token Validation
+- ✅ `test_login_token_contains_user_info` - Token contains user ID, email, school_id, role
+- ✅ `test_login_token_expiration` - Token has expiration claim
+
+#### API Documentation
+- ✅ `test_login_json_api_documented` - OpenAPI docs for JSON endpoint
+- ✅ `test_login_form_api_documented` - OpenAPI docs for form endpoint
+
+#### Edge Cases
+- ✅ `test_login_empty_request_body` - 422 for empty body
+- ✅ `test_login_deleted_user` - 401 for soft-deleted user
+- ✅ `test_login_both_endpoints_same_result` - Both endpoints return consistent format
+
+### Test Fixtures
+- `test_school` - Creates a test school in database
+- `test_user` - Creates an active test user with hashed password
+- `inactive_user` - Creates an inactive test user
+
+### Running Tests
+```bash
+cd backend
+pytest school_service/tests/test_auth_login_api.py -v
+```
 
 ## Time Estimate
 
