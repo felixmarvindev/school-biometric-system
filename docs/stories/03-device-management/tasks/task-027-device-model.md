@@ -17,16 +17,16 @@ Create the Device database model with all required fields, relationships, and da
 
 ## Acceptance Criteria
 
-1. [ ] Device model exists with all required fields
-2. [ ] Database migration creates `devices` table correctly
-3. [ ] IP address and port combination has unique constraint per school
-4. [ ] Serial number has unique constraint (global)
-5. [ ] Model includes timestamps (created_at, updated_at)
-6. [ ] Model includes soft delete support (is_deleted)
-7. [ ] Foreign key to schools table
-8. [ ] Foreign key to device_groups table (optional, nullable)
-9. [ ] Status field with enum (online, offline, unknown)
-10. [ ] Migration runs successfully without errors
+1. [x] Device model exists with all required fields
+2. [x] Database migration creates `devices` table correctly
+3. [x] IP address and port combination has unique constraint per school
+4. [x] Serial number has unique constraint (global)
+5. [x] Model includes timestamps (created_at, updated_at)
+6. [x] Model includes soft delete support (is_deleted)
+7. [x] Foreign key to schools table
+8. [x] Foreign key to device_groups table (optional, nullable)
+9. [x] Status field with enum (online, offline, unknown)
+10. [x] Migration runs successfully without errors
 
 ## Technical Details
 
@@ -127,13 +127,13 @@ class Device(Base):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Migration script created and tested
-- [ ] Model relationships verified
-- [ ] Unique constraints tested
-- [ ] Foreign keys tested
-- [ ] Comprehensive tests written and passing (10+ tests)
-- [ ] Migration applied to test database
+- [x] Code written and follows standards
+- [x] Migration script created and tested
+- [x] Model relationships verified
+- [x] Unique constraints tested
+- [x] Foreign keys tested
+- [x] Comprehensive tests written and passing (10+ tests)
+- [x] Migration applied to test database
 
 ## Time Estimate
 

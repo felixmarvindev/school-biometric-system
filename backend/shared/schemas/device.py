@@ -1,56 +1,22 @@
-# Task 028: Device Schemas
+"""Pydantic schemas for Device."""
 
-## Story/Phase
-- **Story**: Story 03: Device Management
-- **Phase**: Phase 1: Device Registration
-
-## Description
-
-Create Pydantic schemas for device data validation, request/response models, and API documentation.
-
-## Type
-- [x] Backend
-- [ ] Frontend
-- [ ] Database
-- [ ] DevOps
-- [ ] Documentation
-
-## Acceptance Criteria
-
-1. [x] DeviceCreate schema exists with validation
-2. [x] DeviceUpdate schema exists (all fields optional)
-3. [x] DeviceResponse schema exists with all fields
-4. [x] DeviceListResponse schema exists with pagination
-5. [x] IP address validation (IPv4/IPv6 format)
-6. [x] Port validation (1-65535 range)
-7. [x] Serial number validation (if provided)
-8. [x] Status enum properly defined
-9. [x] All schemas documented with descriptions
-
-## Technical Details
-
-### Files to Create/Modify
-
-```
-backend/shared/schemas/device.py
-```
-
-### Key Code Patterns
-
-```python
-# schemas/device.py
 from pydantic import BaseModel, Field, field_validator, IPvAnyAddress
 from typing import Optional
 from datetime import datetime
 from enum import Enum
 
+
 class DeviceStatus(str, Enum):
+    """Device status enumeration for Pydantic validation."""
+
     ONLINE = "online"
     OFFLINE = "offline"
     UNKNOWN = "unknown"
 
+
 class DeviceBase(BaseModel):
     """Base schema with common device fields."""
+
     name: str = Field(..., min_length=1, max_length=200, description="Device display name")
     ip_address: str = Field(..., description="Device IP address (IPv4 or IPv6)")
     port: int = Field(default=4370, ge=1, le=65535, description="Device port (default: 4370)")
@@ -68,12 +34,16 @@ class DeviceBase(BaseModel):
         except Exception:
             raise ValueError("Invalid IP address format")
 
+
 class DeviceCreate(DeviceBase):
     """Schema for creating a new device."""
+
     device_group_id: Optional[int] = Field(None, description="Optional device group ID")
+
 
 class DeviceUpdate(BaseModel):
     """Schema for updating device (all fields optional)."""
+
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     ip_address: Optional[str] = None
     port: Optional[int] = Field(None, ge=1, le=65535)
@@ -94,8 +64,10 @@ class DeviceUpdate(BaseModel):
         except Exception:
             raise ValueError("Invalid IP address format")
 
+
 class DeviceResponse(DeviceBase):
     """Schema for device response."""
+
     id: int
     school_id: int
     status: DeviceStatus
@@ -110,68 +82,30 @@ class DeviceResponse(DeviceBase):
     class Config:
         from_attributes = True
 
+
 class DeviceListResponse(BaseModel):
     """Paginated list of devices."""
+
     items: list[DeviceResponse]
     total: int
     page: int
     page_size: int
     pages: int
 
+
 class DeviceConnectionTest(BaseModel):
     """Schema for connection test request."""
-    timeout: Optional[int] = Field(default=5, ge=1, le=30, description="Connection timeout in seconds")
+
+    timeout: Optional[int] = Field(
+        default=5, ge=1, le=30, description="Connection timeout in seconds"
+    )
+
 
 class DeviceConnectionTestResponse(BaseModel):
     """Schema for connection test response."""
+
     success: bool
     message: str
     device_info: Optional[dict] = None  # Device information if connection successful
     response_time_ms: Optional[int] = None
-```
-
-### Dependencies
-
-- Task 027 (Device model must exist)
-
-## Visual Testing
-
-### Before State
-- No device schemas exist
-- Cannot validate device data
-
-### After State
-- All schemas exist
-- Validation works correctly
-- API documentation includes schemas
-
-### Testing Steps
-
-1. Test DeviceCreate validation - verify required fields
-2. Test IP address validation - verify IPv4/IPv6 formats
-3. Test port validation - verify range 1-65535
-4. Test DeviceUpdate - verify all fields optional
-5. Test DeviceResponse - verify serialization works
-
-## Definition of Done
-
-- [x] Code written and follows standards
-- [x] All validations tested
-- [x] Schemas documented with descriptions
-- [x] Pydantic v2 patterns used
-- [x] Tests written and passing
-- [x] API documentation shows schemas correctly
-
-## Time Estimate
-
-2-3 hours
-
-## Notes
-
-- Use Pydantic v2 Field() with proper constraints
-- IP validation should support both IPv4 and IPv6
-- Port range validation prevents invalid ports
-- Serial number is optional (can be added after connection)
-- Status enum matches database enum
-- Response schemas include all computed fields (last_seen, enrolled_users, etc.)
 

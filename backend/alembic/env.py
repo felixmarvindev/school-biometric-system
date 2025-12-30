@@ -19,6 +19,7 @@ from school_service.models.user import User  # noqa: F401
 from school_service.models.student import Student  # noqa: F401
 from school_service.models.academic_class import AcademicClass  # noqa: F401
 from school_service.models.stream import Stream  # noqa: F401
+from device_service.models.device import Device  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config
