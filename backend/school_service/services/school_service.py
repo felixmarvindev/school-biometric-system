@@ -124,8 +124,9 @@ class SchoolService:
         Returns:
             Updated School instance or None if not found
         """
-        # Convert Pydantic model to dict, excluding None values
-        update_dict = school_data.model_dump(exclude_unset=True)
+        # Convert Pydantic model to dict, excluding unset fields but including None values
+        # This allows clearing optional fields by setting them to None
+        update_dict = school_data.model_dump(exclude_unset=True, exclude_none=False)
         
         return await self.repository.update(school_id, update_dict)
 

@@ -13,6 +13,7 @@ from shared.schemas.school import (
     SchoolRegistrationResponse,
     AdminUserDetails,
     SchoolWithUserResponse,
+    SchoolUpdate,
 )
 from shared.schemas.user import UserCreate, UserResponse
 from school_service.api.routes.auth import get_current_user
@@ -245,6 +246,121 @@ async def get_my_school(
     
     # Convert school to response model
     school_response = SchoolResponse.model_validate(school)
+    
+    # Convert user to dict (user comes from token via get_current_user)
+    user_dict = current_user.model_dump()
+    
+    # Construct response with both school and user
+    return SchoolWithUserResponse(
+        **school_response.model_dump(),
+        user=user_dict
+    )
+
+
+@router.put(
+    "/me",
+    response_model=SchoolWithUserResponse,
+    summary="Update current user's school information",
+    description="""
+    Update the school information for the currently authenticated user.
+    
+    This endpoint requires authentication via JWT token in the Authorization header:
+    `Authorization: Bearer <token>`
+    
+    The user can only update their own school's information (authorization is automatic
+    based on the user's school_id from the JWT token).
+    
+    **Note**: School code cannot be updated (immutable field).
+    
+    Returns both the updated school information and the authenticated user's details.
+    """,
+    responses={
+        200: {
+            "description": "School information updated successfully",
+            "model": SchoolWithUserResponse,
+        },
+        400: {
+            "description": "Validation error or invalid update data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Invalid phone number format"
+                    }
+                }
+            },
+        },
+        401: {
+            "description": "Authentication required",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Could not validate credentials"
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "School not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "School not found"
+                    }
+                }
+            },
+        },
+    },
+)
+async def update_my_school(
+    school_data: SchoolUpdate,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update the school information for the currently authenticated user.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: User can only update their own school (via school_id)
+    - **Immutable Fields**: School code cannot be changed
+    
+    Allowed fields to update:
+    - name: School name (optional, 1-200 characters)
+    - address: School address (optional, max 500 characters)
+    - phone: Phone number (optional, 10-15 digits)
+    - email: School email address (optional, must be valid email format)
+    
+    Returns both the updated school information and the authenticated user's details.
+    """
+    school_service = SchoolService(db)
+    
+    # Get school by the user's school_id
+    school = await school_service.get_school_by_id(current_user.school_id)
+    
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="School not found",
+        )
+    
+    # Check if school is deleted
+    if school.is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="School not found",
+        )
+    
+    # Update school information
+    # Note: SchoolUpdate schema does not include 'code', so it cannot be changed
+    updated_school = await school_service.update_school(school.id, school_data)
+    
+    if not updated_school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="School not found",
+        )
+    
+    # Convert updated school to response model
+    school_response = SchoolResponse.model_validate(updated_school)
     
     # Convert user to dict (user comes from token via get_current_user)
     user_dict = current_user.model_dump()

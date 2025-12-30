@@ -67,13 +67,23 @@ class SchoolRepository:
         return result.scalar_one_or_none()
 
     async def update(self, school_id: int, school_data: dict) -> Optional[School]:
-        """Update school information."""
+        """
+        Update school information.
+        
+        Note: None values are allowed for optional fields (address, phone, email)
+        to support clearing these fields.
+        """
         school = await self.get_by_id(school_id)
         if not school:
             return None
 
+        # Optional fields that can be set to None
+        optional_fields = {'address', 'phone', 'email'}
+        
         for key, value in school_data.items():
-            if value is not None:
+            # Allow None values for optional fields (to clear them)
+            # For other fields, skip None values (they weren't meant to be updated)
+            if value is not None or key in optional_fields:
                 setattr(school, key, value)
 
         await self.db.commit()

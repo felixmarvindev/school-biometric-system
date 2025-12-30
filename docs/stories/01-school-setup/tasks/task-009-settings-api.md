@@ -17,24 +17,27 @@ Create the API endpoint to update school information, with validation and proper
 
 ## Acceptance Criteria
 
-1. [ ] PUT `/api/v1/schools/me` endpoint exists
-2. [ ] Endpoint requires authentication
-3. [ ] Endpoint allows updating: name, address, phone, email
-4. [ ] School code cannot be updated (immutable)
-5. [ ] Input validation works
-6. [ ] Returns 200 with updated school data
-7. [ ] Returns 401 if not authenticated
-8. [ ] Returns 404 if school not found
-9. [ ] API endpoint is documented
+1. [x] PUT `/api/v1/schools/me` endpoint exists
+2. [x] Endpoint requires authentication
+3. [x] Endpoint allows updating: name, address, phone, email
+4. [x] School code cannot be updated (immutable)
+5. [x] Input validation works
+6. [x] Returns 200 with updated school data
+7. [x] Returns 401 if not authenticated
+8. [x] Returns 404 if school not found
+9. [x] API endpoint is documented
+10. [x] Optional fields can be cleared (set to None)
 
 ## Technical Details
 
 ### Files to Create/Modify
 
 ```
-backend/school_service/api/routes/schools.py (add PUT /me endpoint)
-backend/school_service/schemas/school.py (add SchoolUpdate schema)
-backend/school_service/services/school_service.py (add update method)
+backend/school_service/api/routes/schools.py (add PUT /me endpoint) ✅
+backend/shared/schemas/school.py (SchoolUpdate schema already exists) ✅
+backend/school_service/services/school_service.py (update_school method already exists) ✅
+backend/school_service/repositories/school_repository.py (update method enhanced to support None values) ✅
+backend/school_service/tests/test_school_update_api.py (comprehensive test suite) ✅
 ```
 
 ### Key Code Patterns
@@ -88,12 +91,13 @@ async def update_my_school(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Code immutability verified
-- [ ] API documented
-- [ ] Error handling comprehensive
+- [x] Code written and follows standards
+- [x] Unit tests written and passing (`test_school_update_api.py`)
+- [x] Integration tests with authentication
+- [x] Code immutability verified
+- [x] API documented (OpenAPI/Swagger)
+- [x] Error handling comprehensive (401, 404, 422)
+- [x] Optional fields can be cleared (None values supported)
 - [ ] Code reviewed
 - [ ] Tested with Postman/curl
 
@@ -103,8 +107,35 @@ async def update_my_school(
 
 ## Notes
 
-- School code should remain immutable for data integrity
+- School code should remain immutable for data integrity ✅
 - Log updates for audit trail
 - Consider versioning if needed
-- Validate all inputs before updating
+- Validate all inputs before updating ✅
+- Optional fields (address, phone, email) can be cleared by setting to `None` ✅
+
+## Test Coverage
+
+Comprehensive test suite created in `backend/school_service/tests/test_school_update_api.py`:
+
+### Test Cases (20+ tests)
+- ✅ `test_update_school_success` - Full update with all fields
+- ✅ `test_update_school_partial` - Partial update (only some fields)
+- ✅ `test_update_school_empty_fields` - Clearing optional fields (set to None)
+- ✅ `test_update_school_without_token` - 401 when no token
+- ✅ `test_update_school_with_invalid_token` - 401 with invalid token
+- ✅ `test_update_school_with_expired_token` - 401 with expired token
+- ✅ `test_update_school_invalid_name` - Validation for name
+- ✅ `test_update_school_invalid_phone` - Validation for phone format
+- ✅ `test_update_school_invalid_email` - Validation for email format
+- ✅ `test_update_school_address_too_long` - Validation for address length
+- ✅ `test_update_school_code_ignored` - Code immutability verified
+- ✅ `test_update_school_not_found` - 404 when school doesn't exist
+- ✅ `test_update_school_authorization` - User can only update their own school
+- ✅ `test_update_school_api_documented` - OpenAPI documentation check
+
+### Running Tests
+```bash
+cd backend
+pytest school_service/tests/test_school_update_api.py -v
+```
 
