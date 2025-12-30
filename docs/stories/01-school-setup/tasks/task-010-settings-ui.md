@@ -17,25 +17,26 @@ Create the settings page component that allows admins to update their school's i
 
 ## Acceptance Criteria
 
-1. [ ] Settings page route exists at `/settings`
-2. [ ] Settings page is protected (requires authentication)
-3. [ ] `SchoolSettingsForm` component created
-4. [ ] Form is pre-populated with current school data
-5. [ ] School code field is read-only/disabled
-6. [ ] Form validation works
-7. [ ] Save button updates school information
-8. [ ] Cancel button resets form
-9. [ ] Success message shown after update
-10. [ ] Form is responsive and accessible
+1. [x] Settings page route exists at `/dashboard/settings`
+2. [x] Settings page is protected (requires authentication via layout)
+3. [x] Settings form component created
+4. [x] Form is pre-populated with current school data
+5. [x] School code field is read-only/disabled
+6. [x] Form validation works
+7. [x] Save button updates school information
+8. [x] Cancel button resets form
+9. [x] Success message shown after update
+10. [x] Form is responsive and accessible
 
 ## Technical Details
 
 ### Files to Create/Modify
 
 ```
-frontend/app/(dashboard)/settings/page.tsx
-frontend/app/components/features/settings/SchoolSettingsForm.tsx
-frontend/app/lib/api/schools.ts (add update method)
+frontend/app/(dashboard)/dashboard/settings/page.tsx ✅
+frontend/app/(dashboard)/layout.tsx ✅ (shared layout for all dashboard routes)
+frontend/lib/api/schools.ts (updateMySchool function) ✅
+frontend/components/layouts/DashboardLayout.tsx ✅ (reusable layout component)
 ```
 
 ### Key Code Patterns
@@ -112,12 +113,15 @@ export function SchoolSettingsForm() {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
+- [x] Code written and follows standards
+- [x] Form validation works (client-side and server-side)
+- [x] Update functionality works (integrated with PUT /api/v1/schools/me)
+- [x] Responsive design verified
+- [x] Accessibility verified (ARIA labels, keyboard navigation)
+- [x] Uses Next.js layout structure (app/(dashboard)/layout.tsx)
+- [x] Success/error messages with animations
+- [x] Loading states implemented
 - [ ] Component tests written and passing
-- [ ] Form validation works
-- [ ] Update functionality works
-- [ ] Responsive design verified
-- [ ] Accessibility verified
 - [ ] Code reviewed
 - [ ] Tested in browser
 

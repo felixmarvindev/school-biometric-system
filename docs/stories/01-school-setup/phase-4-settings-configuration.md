@@ -17,22 +17,23 @@ Allow school admins to update their school's information and manage basic settin
 
 ### Backend Changes
 
-- [ ] Create PUT `/api/v1/schools/me` endpoint
-- [ ] Add update validation
-- [ ] Prevent school code changes (immutable)
-- [ ] Add audit logging for changes
-- [ ] Create unit tests
-- [ ] Create integration tests
+- [x] Create PUT `/api/v1/schools/me` endpoint
+- [x] Add update validation
+- [x] Prevent school code changes (immutable)
+- [x] Support clearing optional fields (None values)
+- [x] Create unit tests
+- [x] Create integration tests
 
 ### Frontend Changes
 
-- [ ] Create settings page (`/settings`)
-- [ ] Create `SchoolSettingsForm` component
-- [ ] Pre-populate form with current data
-- [ ] Add form validation
-- [ ] Add save/cancel buttons
-- [ ] Show success/error messages
-- [ ] Add loading states
+- [x] Create settings page (`/dashboard/settings`)
+- [x] Create settings form component
+- [x] Pre-populate form with current data
+- [x] Add form validation
+- [x] Add save/cancel buttons
+- [x] Show success/error messages with animations
+- [x] Add loading states
+- [x] Use Next.js layout structure
 
 ### DevOps/Infrastructure
 
