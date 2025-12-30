@@ -91,21 +91,33 @@ async def client(test_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture
 def valid_school_data():
-    """Valid school registration data for testing."""
+    """Valid school registration data for testing (includes admin user)."""
     return {
         "name": "Greenfield Academy",
         "code": "GFA-001",
         "address": "Nairobi, Kenya",
         "phone": "+254712345678",
         "email": "admin@greenfield.ac.ke",
+        "admin": {
+            "email": "admin@greenfield.ac.ke",
+            "first_name": "John",
+            "last_name": "Doe",
+            "password": "TestPassword123!",
+        },
     }
 
 
 @pytest.fixture
 def minimal_school_data():
-    """Minimal valid school registration data (only required fields)."""
+    """Minimal valid school registration data (only required fields + admin)."""
     return {
         "name": "Test School",
         "code": "TEST-001",
+        "admin": {
+            "email": "admin@test.ac.ke",
+            "first_name": "Test",
+            "last_name": "Admin",
+            "password": "TestPassword123!",
+        },
     }
 

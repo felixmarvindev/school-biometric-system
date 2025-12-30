@@ -34,6 +34,14 @@ async def test_register_school_success(
     assert "created_at" in data
     assert "is_deleted" in data
     assert data["is_deleted"] is False
+    
+    # Verify admin_user is included in response
+    assert "admin_user" in data
+    admin_user = data["admin_user"]
+    assert admin_user["email"] == valid_school_data["admin"]["email"]
+    assert admin_user["first_name"] == valid_school_data["admin"]["first_name"]
+    assert admin_user["last_name"] == valid_school_data["admin"]["last_name"]
+    assert "password" not in admin_user  # Password should not be in response
 
 
 @pytest.mark.asyncio
@@ -58,6 +66,13 @@ async def test_register_school_minimal_data(
     assert data["address"] is None
     assert data["phone"] is None
     assert data["email"] is None
+    
+    # Verify admin_user is included in response
+    assert "admin_user" in data
+    admin_user = data["admin_user"]
+    assert admin_user["email"] == minimal_school_data["admin"]["email"]
+    assert admin_user["first_name"] == minimal_school_data["admin"]["first_name"]
+    assert admin_user["last_name"] == minimal_school_data["admin"]["last_name"]
 
 
 @pytest.mark.asyncio
@@ -77,8 +92,11 @@ async def test_register_school_duplicate_code(
     assert response1.status_code == 201
 
     # Try to register with same code (different case)
+    # Need to change admin email too since it must be unique
     duplicate_data = valid_school_data.copy()
     duplicate_data["code"] = valid_school_data["code"].lower()  # Different case
+    duplicate_data["admin"] = valid_school_data["admin"].copy()
+    duplicate_data["admin"]["email"] = "admin2@greenfield.ac.ke"  # Different email
     
     response2 = await client.post("/api/v1/schools/register", json=duplicate_data)
     
@@ -124,6 +142,28 @@ async def test_register_school_missing_code(
     """
     invalid_data = valid_school_data.copy()
     del invalid_data["code"]
+    
+    response = await client.post("/api/v1/schools/register", json=invalid_data)
+    
+    assert response.status_code == 422
+    error_data = response.json()
+    assert "detail" in error_data
+
+
+@pytest.mark.asyncio
+@pytest.mark.api
+async def test_register_school_missing_admin(
+    client: AsyncClient, valid_school_data: dict, test_db: AsyncSession
+):
+    """
+    Test validation error for missing required field (admin).
+    
+    Acceptance Criteria:
+    - Input validation works (required fields)
+    - Validation errors return 422 with clear messages
+    """
+    invalid_data = valid_school_data.copy()
+    del invalid_data["admin"]
     
     response = await client.post("/api/v1/schools/register", json=invalid_data)
     

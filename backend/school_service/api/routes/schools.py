@@ -13,7 +13,8 @@ from shared.schemas.school import (
     SchoolRegistrationResponse,
     AdminUserDetails,
 )
-from shared.schemas.user import UserCreate
+from shared.schemas.user import UserCreate, UserResponse
+from school_service.api.routes.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/schools", tags=["schools"])
 
@@ -166,4 +167,78 @@ async def register_school(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_detail,
         )
+
+
+@router.get(
+    "/me",
+    response_model=SchoolResponse,
+    summary="Get current user's school",
+    description="""
+    Get the school information for the currently authenticated user.
+    
+    This endpoint requires authentication via JWT token in the Authorization header:
+    `Authorization: Bearer <token>`
+    
+    The user can only access their own school's information (authorization is automatic
+    based on the user's school_id from the JWT token).
+    """,
+    responses={
+        200: {
+            "description": "School information retrieved successfully",
+            "model": SchoolResponse,
+        },
+        401: {
+            "description": "Authentication required",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Could not validate credentials"
+                    }
+                }
+            },
+        },
+        404: {
+            "description": "School not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "School not found"
+                    }
+                }
+            },
+        },
+    },
+)
+async def get_my_school(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get the school information for the currently authenticated user.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: User can only access their own school (via school_id)
+    
+    Returns the school information associated with the authenticated user's school_id.
+    """
+    school_service = SchoolService(db)
+    
+    # Get school by the user's school_id
+    school = await school_service.get_school_by_id(current_user.school_id)
+    
+    if not school:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="School not found",
+        )
+    
+    # Check if school is deleted
+    if school.is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="School not found",
+        )
+    
+    # Convert to response model
+    return SchoolResponse.model_validate(school)
 
