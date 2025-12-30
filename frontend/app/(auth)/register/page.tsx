@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { School, User, ArrowLeft } from "lucide-react"
+import { School, User, ArrowLeft, Home } from "lucide-react"
+import Link from "next/link"
 import { registerSchool, SchoolRegistrationError } from "@/lib/api/schools"
 import type { SchoolRegistrationWithAdminFormData } from "@/lib/validations/school"
 import { AdminAccountFormSimple, type AdminAccountFormData, type AdminAccountFormErrors } from "@/components/features/auth/AdminAccountFormSimple"
@@ -266,9 +267,9 @@ export default function RegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl">
-        <Card className="border-none shadow-2xl bg-white/80 backdrop-blur-sm">
+        <Card className="border-none shadow-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
           <CardHeader className="space-y-6 pb-8">
             {/* Progress Indicator */}
             <StepProgressIndicator
@@ -380,6 +381,36 @@ export default function RegistrationPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Secondary Links */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700"
+            >
+              <div className="flex flex-col gap-2">
+                <Link href="/login" className="w-full">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 hover:text-blue-700 dark:hover:text-blue-300 transition-colors bg-transparent"
+                  >
+                    Already have an account? Sign in
+                  </Button>
+                </Link>
+                <Link href="/" className="w-full">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Back to home
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
           </CardContent>
         </Card>
       </motion.div>

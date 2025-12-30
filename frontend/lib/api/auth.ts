@@ -253,6 +253,156 @@ export async function registerUser(
 }
 
 /**
+ * Token response from login API.
+ */
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+/**
+ * Login credentials.
+ */
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+/**
+ * Custom error class for login errors.
+ */
+export class LoginError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number
+  ) {
+    super(message);
+    this.name = 'LoginError';
+  }
+}
+
+/**
+ * Login a user and get JWT token.
+ * 
+ * @param credentials - Login credentials (email and password)
+ * @returns Promise resolving to token response
+ * @throws LoginError if login fails
+ * 
+ * Error handling:
+ * - 401: Invalid credentials
+ * - 422: Validation errors
+ * - 500: Server error
+ * - Network errors: Connection/timeout/CORS errors
+ */
+export async function login(credentials: LoginCredentials): Promise<TokenResponse> {
+  try {
+    const response = await axios.post<TokenResponse>(
+      `${API_BASE_URL}/api/v1/auth/login/json`,
+      credentials,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      }
+    );
+    
+    // Check for error responses (4xx status codes)
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+      
+      // Handle 401 - Invalid credentials
+      if (statusCode === 401) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'Incorrect email or password';
+        throw new LoginError(message, statusCode);
+      }
+      
+      // Handle 422 - Validation errors
+      if (statusCode === 422) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'Validation failed. Please check your input.';
+        throw new LoginError(message, statusCode);
+      }
+      
+      // Handle other 4xx errors
+      const message = typeof errorData?.detail === 'string'
+        ? errorData.detail
+        : `Login failed with status ${statusCode}. Please try again.`;
+      throw new LoginError(message, statusCode);
+    }
+    
+    return response.data;
+  } catch (error) {
+    // Handle LoginError (re-throw as-is)
+    if (error instanceof LoginError) {
+      throw error;
+    }
+    
+    // Handle axios errors
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status || 500;
+      const errorData = error.response?.data as ApiError | undefined;
+      
+      // Handle 500 - Internal server error
+      if (statusCode === 500) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'Server error. Our team has been notified. Please try again later.';
+        throw new LoginError(message, statusCode);
+      }
+      
+      // Handle network errors (no response received)
+      if (!error.response) {
+        // Connection timeout
+        if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+          throw new LoginError(
+            'Request timed out. Please check your internet connection and try again.',
+            0
+          );
+        }
+        
+        // Network error (server unreachable, CORS, etc.)
+        if (error.code === 'ERR_NETWORK') {
+          throw new LoginError(
+            'Unable to connect to the server. Please ensure:\n' +
+            '• The backend services are running\n' +
+            '• Your internet connection is stable\n' +
+            '• There are no firewall restrictions',
+            0
+          );
+        }
+        
+        // Generic network error
+        throw new LoginError(
+          'Network error. Please check your connection and try again.',
+          0
+        );
+      }
+      
+      // Generic axios error with response
+      const message = error.response?.data?.detail 
+        ? String(error.response.data.detail)
+        : error.message || 'An unexpected error occurred';
+      throw new LoginError(message, statusCode);
+    }
+    
+    // Handle unknown errors
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred. Please try again.';
+    
+    // Log unexpected errors for debugging
+    console.error('Unexpected error during login:', error);
+    
+    throw new LoginError(errorMessage, 500);
+  }
+}
+
+/**
  * Map backend field names to frontend field names.
  * Handles any differences in naming conventions.
  */
