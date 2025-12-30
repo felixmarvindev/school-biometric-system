@@ -1,10 +1,10 @@
 /**
  * API client functions for School management.
  * 
- * TODO: Implement API calls to the School Service via API Gateway.
- * 
- * Base URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
- * Endpoint: POST /api/v1/schools/register
+ * Base URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
+ * Endpoints:
+ * - POST /api/v1/schools/register - Register a new school
+ * - GET /api/v1/schools/me - Get current user's school (requires authentication)
  */
 
 import axios from 'axios';
@@ -282,6 +282,128 @@ export async function registerSchool(
     // Log unexpected errors for debugging
     console.error('Unexpected error during school registration:', error);
     
+    throw new SchoolRegistrationError(errorMessage, 500);
+  }
+}
+
+/**
+ * Get current user's school information.
+ * 
+ * @param token - JWT authentication token
+ * @returns Promise resolving to the school information
+ * @throws SchoolRegistrationError if request fails
+ * 
+ * Error handling:
+ * - 401: Authentication required
+ * - 404: School not found
+ * - 500: Server error
+ * - Network errors: Connection/timeout/CORS errors
+ */
+export async function getMySchool(token?: string): Promise<SchoolResponse> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add authentication token if provided
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await axios.get<SchoolResponse>(
+      `${API_BASE_URL}/api/v1/schools/me`,
+      {
+        headers,
+        validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      }
+    );
+
+    // Check for error responses (4xx status codes)
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      // Handle 401 - Authentication required
+      if (statusCode === 401) {
+        throw new SchoolRegistrationError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      // Handle 404 - School not found
+      if (statusCode === 404) {
+        throw new SchoolRegistrationError(
+          'School not found. Please contact support.',
+          statusCode
+        );
+      }
+
+      // Handle other 4xx errors
+      const message = typeof errorData?.detail === 'string'
+        ? errorData.detail
+        : `Failed to load school information (${statusCode})`;
+      throw new SchoolRegistrationError(message, statusCode);
+    }
+
+    return response.data;
+  } catch (error) {
+    // Handle SchoolRegistrationError (re-throw as-is)
+    if (error instanceof SchoolRegistrationError) {
+      throw error;
+    }
+
+    // Handle axios errors
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status || 500;
+      const errorData = error.response?.data as ApiError | undefined;
+
+      // Handle 500 - Internal server error
+      if (statusCode === 500) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'Server error. Our team has been notified. Please try again later.';
+        throw new SchoolRegistrationError(message, statusCode);
+      }
+
+      // Handle network errors (no response received)
+      if (!error.response) {
+        if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+          throw new SchoolRegistrationError(
+            'Request timed out. Please check your internet connection and try again.',
+            0
+          );
+        }
+
+        if (error.code === 'ERR_NETWORK') {
+          throw new SchoolRegistrationError(
+            'Unable to connect to the server. Please ensure:\n' +
+            '• The backend services are running\n' +
+            '• Your internet connection is stable\n' +
+            '• There are no firewall restrictions',
+            0
+          );
+        }
+
+        throw new SchoolRegistrationError(
+          'Network error. Please check your connection and try again.',
+          0
+        );
+      }
+
+      // Generic axios error with response
+      const message = error.response?.data?.detail
+        ? String(error.response.data.detail)
+        : error.message || 'An unexpected error occurred';
+      throw new SchoolRegistrationError(message, statusCode);
+    }
+
+    // Handle unknown errors
+    const errorMessage = error instanceof Error
+      ? error.message
+      : 'An unexpected error occurred. Please try again.';
+
+    console.error('Unexpected error while fetching school data:', error);
     throw new SchoolRegistrationError(errorMessage, 500);
   }
 }

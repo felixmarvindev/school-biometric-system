@@ -15,9 +15,11 @@ interface AuthState {
   token: string | null;
   user: UserResponse | null;
   isAuthenticated: boolean;
+  hasHydrated: boolean;
   login: (token: string, user: UserResponse) => void;
   logout: () => void;
   setUser: (user: UserResponse) => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
+      hasHydrated: false,
       
       login: (token: string, user: UserResponse) => {
         set({
@@ -46,6 +49,10 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: UserResponse) => {
         set({ user });
       },
+      
+      setHasHydrated: (hasHydrated: boolean) => {
+        set({ hasHydrated });
+      },
     }),
     {
       name: 'auth-storage', // localStorage key
@@ -54,6 +61,22 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state, error) => {
+        // This callback runs after rehydration is complete
+        if (error) {
+          console.error('Error rehydrating auth store:', error);
+        }
+        // Set hasHydrated to true after rehydration completes (whether successful or not)
+        if (state) {
+          state.setHasHydrated(true);
+        } else {
+          // If state is null, still mark as hydrated (no persisted data)
+          // We need to access the store to set this
+          setTimeout(() => {
+            useAuthStore.getState().setHasHydrated(true);
+          }, 0);
+        }
+      },
     }
   )
 );
