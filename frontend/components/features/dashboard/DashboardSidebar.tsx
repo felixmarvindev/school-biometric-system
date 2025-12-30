@@ -36,6 +36,7 @@ import {
   LogOut,
   ChevronUp,
   LucideIcon,
+  GraduationCap,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -59,6 +60,7 @@ export interface DashboardSidebarProps {
 const coreNavigation: NavigationItem[] = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { name: "Students", icon: Users, href: "/dashboard/students" },
+  { name: "Classes", icon: GraduationCap, href: "/dashboard/classes" },
   { name: "Devices", icon: Smartphone, href: "/dashboard/devices" },
   { name: "Attendance", icon: ClipboardCheck, href: "/dashboard/attendance" },
   { name: "Enrollment", icon: UserPlus, href: "/dashboard/enrollment" },

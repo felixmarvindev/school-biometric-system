@@ -10,6 +10,8 @@ import {
   type StudentResponse,
   StudentApiError,
 } from "@/lib/api/students"
+import { listClasses, type ClassResponse } from "@/lib/api/classes"
+import { listStreams, type StreamResponse } from "@/lib/api/streams"
 import { pageTransition } from "@/lib/animations/framer-motion"
 import { useDebounce } from "@/lib/hooks/useDebounce"
 
@@ -26,6 +28,8 @@ export default function StudentsPage() {
   const [streamFilter, setStreamFilter] = useState<number | null>(null)
   const [totalPages, setTotalPages] = useState(0)
   const [total, setTotal] = useState(0)
+  const [classes, setClasses] = useState<ClassResponse[]>([])
+  const [streams, setStreams] = useState<StreamResponse[]>([])
 
   // Debounce search input
   const debouncedSearch = useDebounce(search, 300)
@@ -68,6 +72,25 @@ export default function StudentsPage() {
     setPage(1)
   }, [debouncedSearch, classFilter, streamFilter])
 
+  // Fetch classes and streams
+  useEffect(() => {
+    if (token) {
+      const fetchClassesAndStreams = async () => {
+        try {
+          const [classesData, streamsData] = await Promise.all([
+            listClasses(token),
+            listStreams(token),
+          ])
+          setClasses(classesData)
+          setStreams(streamsData)
+        } catch (err) {
+          console.error("Failed to load classes/streams:", err)
+        }
+      }
+      fetchClassesAndStreams()
+    }
+  }, [token])
+
   const handleAddStudent = () => {
     router.push("/dashboard/students/new")
   }
@@ -99,6 +122,8 @@ export default function StudentsPage() {
         onPageChange={setPage}
         onAddStudent={handleAddStudent}
         onStudentClick={handleStudentClick}
+        classes={classes.map((c) => ({ id: c.id, name: c.name }))}
+        streams={streams.map((s) => ({ id: s.id, name: s.name, class_id: s.class_id }))}
       />
     </motion.main>
   )

@@ -61,20 +61,27 @@ export const studentFormSchema = z.object({
   
   parent_phone: z
     .string()
-    .regex(
-      /^\+?[0-9]{10,15}$/,
-      'Phone number must be 10-15 digits (optional + prefix)'
-    )
     .nullable()
     .optional()
-    .or(z.literal('')),
+    .refine(
+      (val) => {
+        if (!val || val === '') return true; // Allow empty
+        return /^\+?[0-9]{10,15}$/.test(val);
+      },
+      { message: 'Phone number must be 10-15 digits (optional + prefix)' }
+    ),
   
   parent_email: z
     .string()
-    .email('Invalid email format')
     .nullable()
     .optional()
-    .or(z.literal('')),
+    .refine(
+      (val) => {
+        if (!val || val === '') return true; // Allow empty
+        return z.string().email().safeParse(val).success;
+      },
+      { message: 'Please enter a valid email address' }
+    ),
 });
 
 /**

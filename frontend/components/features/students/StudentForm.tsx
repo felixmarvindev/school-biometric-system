@@ -25,6 +25,8 @@ import {
   type StudentResponse,
   StudentApiError,
 } from "@/lib/api/students"
+import { listClasses, type ClassResponse } from "@/lib/api/classes"
+import { listStreams, type StreamResponse } from "@/lib/api/streams"
 import { studentFormSchema, type StudentFormData } from "@/lib/validations/student"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -42,6 +44,9 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [classes, setClasses] = useState<ClassResponse[]>([])
+  const [streams, setStreams] = useState<StreamResponse[]>([])
+  const [isLoadingClasses, setIsLoadingClasses] = useState(false)
 
   const {
     register,
@@ -66,6 +71,51 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
   })
 
   const formValues = watch()
+  const selectedClassId = formValues.class_id
+
+  // Fetch classes
+  useEffect(() => {
+    if (token) {
+      const fetchClasses = async () => {
+        try {
+          setIsLoadingClasses(true)
+          const data = await listClasses(token)
+          setClasses(data)
+        } catch (err) {
+          console.error("Failed to load classes:", err)
+        } finally {
+          setIsLoadingClasses(false)
+        }
+      }
+      fetchClasses()
+    }
+  }, [token])
+
+  // Fetch streams when class changes
+  useEffect(() => {
+    if (token && selectedClassId) {
+      const fetchStreams = async () => {
+        try {
+          const data = await listStreams(token, selectedClassId)
+          setStreams(data)
+          // Clear stream selection if current stream doesn't belong to selected class
+          if (formValues.stream_id) {
+            const currentStream = data.find((s) => s.id === formValues.stream_id)
+            if (!currentStream) {
+              setValue("stream_id", null)
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load streams:", err)
+          setStreams([])
+        }
+      }
+      fetchStreams()
+    } else {
+      setStreams([])
+      setValue("stream_id", null)
+    }
+  }, [token, selectedClassId, setValue, formValues.stream_id])
 
   // Fetch student data if editing
   useEffect(() => {
@@ -361,7 +411,11 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Not assigned</SelectItem>
-                        {/* Classes will be populated from API in Phase 3 */}
+                        {classes.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id.toString()}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.class_id && (
@@ -386,7 +440,11 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Not assigned</SelectItem>
-                        {/* Streams will be populated from API in Phase 3 */}
+                        {streams.map((stream) => (
+                          <SelectItem key={stream.id} value={stream.id.toString()}>
+                            {stream.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.stream_id && (
@@ -405,7 +463,7 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
                   {/* Parent Phone */}
                   <div className="space-y-2">
                     <Label htmlFor="parent_phone" className="text-gray-700 dark:text-gray-300">
-                      Phone Number
+                      Phone Number <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                     </Label>
                     <Input
                       id="parent_phone"
@@ -425,7 +483,7 @@ export function StudentForm({ studentId, onSuccess }: StudentFormProps) {
                   {/* Parent Email */}
                   <div className="space-y-2">
                     <Label htmlFor="parent_email" className="text-gray-700 dark:text-gray-300">
-                      Email Address
+                      Email Address <span className="text-muted-foreground text-sm font-normal">(Optional)</span>
                     </Label>
                     <Input
                       id="parent_email"

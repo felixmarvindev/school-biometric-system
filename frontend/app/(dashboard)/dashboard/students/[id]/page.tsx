@@ -36,6 +36,8 @@ import {
   type StudentResponse,
   StudentApiError,
 } from "@/lib/api/students"
+import { getClass, type ClassResponse } from "@/lib/api/classes"
+import { getStream, type StreamResponse } from "@/lib/api/streams"
 import { formatDate, formatDateTime } from "@/lib/utils"
 
 export default function StudentDetailPage() {
@@ -44,6 +46,8 @@ export default function StudentDetailPage() {
   const studentId = params.id ? parseInt(params.id as string) : undefined
   const { token } = useAuthStore()
   const [student, setStudent] = useState<StudentResponse | null>(null)
+  const [classData, setClassData] = useState<ClassResponse | null>(null)
+  const [streamData, setStreamData] = useState<StreamResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -58,6 +62,25 @@ export default function StudentDetailPage() {
         setError(null)
         const data = await getStudent(token, studentId)
         setStudent(data)
+
+        // Fetch class and stream data if they exist
+        if (data.class_id) {
+          try {
+            const classInfo = await getClass(token, data.class_id)
+            setClassData(classInfo)
+          } catch (err) {
+            console.error("Failed to load class:", err)
+          }
+        }
+
+        if (data.stream_id) {
+          try {
+            const streamInfo = await getStream(token, data.stream_id)
+            setStreamData(streamInfo)
+          } catch (err) {
+            console.error("Failed to load stream:", err)
+          }
+        }
       } catch (err) {
         if (err instanceof StudentApiError) {
           setError(err.message)
@@ -254,10 +277,10 @@ export default function StudentDetailPage() {
                   Academic Information
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {student.class_id ? (
+                  {classData ? (
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Class</p>
-                      <p className="font-medium">Form {student.class_id}</p>
+                      <p className="font-medium">{classData.name}</p>
                     </div>
                   ) : (
                     <div>
@@ -265,10 +288,10 @@ export default function StudentDetailPage() {
                       <p className="text-muted-foreground">Not assigned</p>
                     </div>
                   )}
-                  {student.stream_id ? (
+                  {streamData ? (
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Stream</p>
-                      <p className="font-medium">Stream {student.stream_id}</p>
+                      <p className="font-medium">{streamData.name}</p>
                     </div>
                   ) : (
                     <div>
