@@ -17,16 +17,16 @@ Create the API endpoint for creating new students with validation, error handlin
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/students` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Endpoint validates all required fields
-4. [ ] Admission number uniqueness validated per school
-5. [ ] Student is associated with authenticated user's school
-6. [ ] Returns 201 with created student data
-7. [ ] Returns 422 for validation errors
-8. [ ] Returns 409 for duplicate admission number
-9. [ ] Returns 401 if not authenticated
-10. [ ] API endpoint is documented
+1. [x] POST `/api/v1/students` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Endpoint validates all required fields
+4. [x] Admission number uniqueness validated per school
+5. [x] Student is associated with authenticated user's school
+6. [x] Returns 201 with created student data
+7. [x] Returns 422 for validation errors
+8. [x] Returns 409 for duplicate admission number
+9. [x] Returns 401 if not authenticated
+10. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -120,14 +120,14 @@ async def create_student(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Authorization verified (user can only create students in their school)
-- [ ] API documented (OpenAPI/Swagger)
-- [ ] Error handling comprehensive
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Authorization verified (user can only create students in their school)
+- [x] API documented (OpenAPI/Swagger)
+- [x] Error handling comprehensive
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

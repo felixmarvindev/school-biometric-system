@@ -17,15 +17,15 @@ Create the API endpoint for soft-deleting students (deactivation) with proper au
 
 ## Acceptance Criteria
 
-1. [ ] DELETE `/api/v1/students/{id}` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Performs soft delete (sets is_deleted = true)
-4. [ ] Student data is preserved (not hard deleted)
-5. [ ] Returns 204 No Content on success
-6. [ ] Returns 401 if not authenticated
-7. [ ] Returns 404 if student not found
-8. [ ] Returns 404 if student belongs to different school
-9. [ ] API endpoint is documented
+1. [x] DELETE `/api/v1/students/{id}` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Performs soft delete (sets is_deleted = true)
+4. [x] Student data is preserved (not hard deleted)
+5. [x] Returns 204 No Content on success
+6. [x] Returns 401 if not authenticated
+7. [x] Returns 404 if student not found
+8. [x] Returns 404 if student belongs to different school
+9. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -111,15 +111,15 @@ async def delete_student(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Authorization verified
-- [ ] Soft delete verified (data preserved)
-- [ ] API documented
-- [ ] Error handling comprehensive
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Authorization verified
+- [x] Soft delete verified (data preserved)
+- [x] API documented
+- [x] Error handling comprehensive
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

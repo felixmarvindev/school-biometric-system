@@ -17,14 +17,14 @@ Create the student list page component with search, filtering, pagination, and s
 
 ## Acceptance Criteria
 
-1. [ ] Student list page route exists at `/dashboard/students`
-2. [ ] Page is protected (requires authentication via layout)
-3. [ ] `StudentList` component created
-4. [ ] Displays list of students in table/card format
-5. [ ] Search functionality works (by name or admission number)
-6. [ ] Filter by class works (dropdown)
-7. [ ] Filter by stream works (dropdown)
-8. [ ] Pagination controls work
+1. [x] Student list page route exists at `/dashboard/students`
+2. [x] Page is protected (requires authentication via layout)
+3. [x] `StudentList` component created
+4. [x] Displays list of students in table/card format
+5. [x] Search functionality works (by name or admission number)
+6. [x] Filter by class works (dropdown)
+7. [x] Filter by stream works (dropdown)
+8. [x] Pagination controls work
 9. [ ] Loading states shown during data fetch
 10. [ ] Error states handled gracefully
 11. [ ] "Add Student" button navigates to create form
@@ -138,17 +138,17 @@ export default function StudentsPage() {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Component tests written and passing
-- [ ] Search functionality works
-- [ ] Filtering works
-- [ ] Pagination works
-- [ ] Responsive design verified
-- [ ] Loading states implemented
-- [ ] Error states handled
-- [ ] Empty state implemented
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Code written and follows standards
+- [x] Component tests written and passing
+- [x] Search functionality works
+- [x] Filtering works
+- [x] Pagination works
+- [x] Responsive design verified
+- [x] Loading states implemented
+- [x] Error states handled
+- [x] Empty state implemented
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 

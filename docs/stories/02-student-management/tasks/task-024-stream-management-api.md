@@ -17,17 +17,17 @@ Create API endpoints for managing streams (create, list, update, delete) within 
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/streams` endpoint exists
-2. [ ] GET `/api/v1/streams` endpoint exists (list, filtered by class)
-3. [ ] GET `/api/v1/streams/{id}` endpoint exists
-4. [ ] PUT `/api/v1/streams/{id}` endpoint exists
-5. [ ] DELETE `/api/v1/streams/{id}` endpoint exists (soft delete)
-6. [ ] Endpoints require authentication
-7. [ ] Streams are scoped to authenticated user's school
-8. [ ] Stream name uniqueness validated per class
-9. [ ] Class ownership validated (stream belongs to user's school class)
-10. [ ] Returns appropriate status codes
-11. [ ] API endpoints are documented
+1. [x] POST `/api/v1/streams` endpoint exists
+2. [x] GET `/api/v1/streams` endpoint exists (list, filtered by class)
+3. [x] GET `/api/v1/streams/{id}` endpoint exists
+4. [x] PUT `/api/v1/streams/{id}` endpoint exists
+5. [x] DELETE `/api/v1/streams/{id}` endpoint exists (soft delete)
+6. [x] Endpoints require authentication
+7. [x] Streams are scoped to authenticated user's school
+8. [x] Stream name uniqueness validated per class
+9. [x] Class ownership validated (stream belongs to user's school class)
+10. [x] Returns appropriate status codes
+11. [x] API endpoints are documented
 
 ## Technical Details
 
@@ -161,14 +161,14 @@ async def list_streams(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Authorization verified
-- [ ] API documented
-- [ ] Error handling comprehensive
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Authorization verified
+- [x] API documented
+- [x] Error handling comprehensive
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

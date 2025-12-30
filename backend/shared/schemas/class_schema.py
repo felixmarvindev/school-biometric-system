@@ -15,7 +15,7 @@ class ClassBase(BaseModel):
 class ClassCreate(ClassBase):
     """Schema for creating a new class."""
 
-    school_id: int = Field(..., description="ID of the school")
+    school_id: Optional[int] = Field(None, description="ID of the school (auto-assigned from authenticated user)")
 
 
 class ClassUpdate(BaseModel):

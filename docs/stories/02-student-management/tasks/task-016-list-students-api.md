@@ -17,17 +17,17 @@ Create the API endpoint for listing students with pagination, filtering, and sea
 
 ## Acceptance Criteria
 
-1. [ ] GET `/api/v1/students` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Returns only students from authenticated user's school
-4. [ ] Pagination support (page, page_size)
-5. [ ] Filtering by class_id (optional)
-6. [ ] Filtering by stream_id (optional)
-7. [ ] Search by name (optional)
-8. [ ] Search by admission_number (optional)
-9. [ ] Returns paginated response with metadata
-10. [ ] Returns 401 if not authenticated
-11. [ ] API endpoint is documented
+1. [x] GET `/api/v1/students` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Returns only students from authenticated user's school
+4. [x] Pagination support (page, page_size)
+5. [x] Filtering by class_id (optional)
+6. [x] Filtering by stream_id (optional)
+7. [x] Search by name (optional)
+8. [x] Search by admission_number (optional)
+9. [x] Returns paginated response with metadata
+10. [x] Returns 401 if not authenticated
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -129,16 +129,16 @@ class PaginatedStudentResponse(BaseModel):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Pagination tested
-- [ ] Filtering tested
-- [ ] Search tested
-- [ ] Authorization verified
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Pagination tested
+- [x] Filtering tested
+- [x] Search tested
+- [x] Authorization verified
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

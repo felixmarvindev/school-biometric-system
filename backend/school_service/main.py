@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from school_service.core.config import settings
-from school_service.api.routes import schools, auth, students
+from school_service.api.routes import schools, auth, students, classes, streams
 
 app = FastAPI(
     title="School Biometric System - School Service",
@@ -37,6 +37,8 @@ app.add_middleware(
 app.include_router(schools.router)
 app.include_router(auth.router)
 app.include_router(students.router)
+app.include_router(classes.router)
+app.include_router(streams.router)
 
 # on going to root / redirect to /docs
 @app.get("/")

@@ -17,17 +17,17 @@ Create the API endpoint for updating student information with validation and pro
 
 ## Acceptance Criteria
 
-1. [ ] PUT `/api/v1/students/{id}` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Allows updating: name, DOB, gender, class_id, stream_id, parent contacts
-4. [ ] Admission number cannot be updated (immutable)
-5. [ ] School ID cannot be updated (immutable)
-6. [ ] Input validation works
-7. [ ] Returns 200 with updated student data
-8. [ ] Returns 401 if not authenticated
-9. [ ] Returns 404 if student not found
-10. [ ] Returns 404 if student belongs to different school
-11. [ ] API endpoint is documented
+1. [x] PUT `/api/v1/students/{id}` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Allows updating: name, DOB, gender, class_id, stream_id, parent contacts
+4. [x] Admission number cannot be updated (immutable)
+5. [x] School ID cannot be updated (immutable)
+6. [x] Input validation works
+7. [x] Returns 200 with updated student data
+8. [x] Returns 401 if not authenticated
+9. [x] Returns 404 if student not found
+10. [x] Returns 404 if student belongs to different school
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -115,15 +115,15 @@ async def update_student(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Authorization verified
-- [ ] Immutability verified
-- [ ] API documented
-- [ ] Error handling comprehensive
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Authorization verified
+- [x] Immutability verified
+- [x] API documented
+- [x] Error handling comprehensive
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 
