@@ -51,25 +51,33 @@ export interface DashboardSidebarProps {
   adminName: string
   adminEmail: string
   adminAvatar?: string | null
+  currentPath?: string
   onLogout?: () => void
   onSettings?: () => void
 }
 
 const coreNavigation: NavigationItem[] = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", current: true },
-  { name: "Students", icon: Users, href: "/dashboard/students", current: false },
-  { name: "Devices", icon: Smartphone, href: "/dashboard/devices", current: false },
-  { name: "Attendance", icon: ClipboardCheck, href: "/dashboard/attendance", current: false },
-  { name: "Enrollment", icon: UserPlus, href: "/dashboard/enrollment", current: false },
+  { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { name: "Students", icon: Users, href: "/dashboard/students" },
+  { name: "Devices", icon: Smartphone, href: "/dashboard/devices" },
+  { name: "Attendance", icon: ClipboardCheck, href: "/dashboard/attendance" },
+  { name: "Enrollment", icon: UserPlus, href: "/dashboard/enrollment" },
 ]
 
 const systemNavigation: NavigationItem[] = [
-  { name: "Notifications", icon: Bell, href: "/dashboard/notifications", current: false, badge: 3 },
-  { name: "Settings", icon: Settings, href: "/dashboard/settings", current: false },
-  { name: "Help & Support", icon: HelpCircle, href: "/dashboard/help", current: false },
+  { name: "Notifications", icon: Bell, href: "/dashboard/notifications", badge: 3 },
+  { name: "Settings", icon: Settings, href: "/dashboard/settings" },
+  { name: "Help & Support", icon: HelpCircle, href: "/dashboard/help" },
 ]
 
-export function DashboardSidebar({ adminName, adminEmail, adminAvatar, onLogout, onSettings }: DashboardSidebarProps) {
+export function DashboardSidebar({ 
+  adminName, 
+  adminEmail, 
+  adminAvatar, 
+  currentPath,
+  onLogout, 
+  onSettings 
+}: DashboardSidebarProps) {
   const initials = adminName
     .split(" ")
     .map((n) => n[0])
@@ -100,16 +108,19 @@ export function DashboardSidebar({ adminName, adminEmail, adminAvatar, onLogout,
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {coreNavigation.map((item) => (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={item.current} tooltip={item.name}>
-                      <Link href={item.href} className="transition-colors">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {coreNavigation.map((item) => {
+                  const isActive = currentPath === item.href || (item.href !== "/dashboard" && currentPath?.startsWith(item.href))
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                        <Link href={item.href} className="transition-colors">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.name}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -121,24 +132,27 @@ export function DashboardSidebar({ adminName, adminEmail, adminAvatar, onLogout,
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {systemNavigation.map((item) => (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton asChild isActive={item.current} tooltip={item.name}>
-                      <Link href={item.href} className="relative transition-colors">
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.name}</span>
-                        {item.badge && (
-                          <Badge
-                            variant="destructive"
-                            className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {systemNavigation.map((item) => {
+                  const isActive = currentPath === item.href || (item.href !== "/dashboard/settings" && currentPath?.startsWith(item.href))
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      <SidebarMenuButton asChild isActive={isActive} tooltip={item.name}>
+                        <Link href={item.href} className="relative transition-colors">
+                          <item.icon className="h-4 w-4" />
+                          <span>{item.name}</span>
+                          {item.badge && (
+                            <Badge
+                              variant="destructive"
+                              className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
+                            >
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

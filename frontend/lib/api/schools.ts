@@ -60,6 +60,16 @@ export interface ApiError {
 }
 
 /**
+ * Interface for school update data.
+ */
+export interface SchoolUpdateData {
+  name?: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+}
+
+/**
  * Custom error class for API errors with status code and details.
  */
 export class SchoolRegistrationError extends Error {
@@ -405,6 +415,133 @@ export async function getMySchool(token?: string): Promise<SchoolResponse> {
       : 'An unexpected error occurred. Please try again.';
 
     console.error('Unexpected error while fetching school data:', error);
+    throw new SchoolRegistrationError(errorMessage, 500);
+  }
+}
+
+/**
+ * Update current user's school information.
+ * 
+ * @param token - JWT authentication token
+ * @param updateData - School update data (name, address, phone, email)
+ * @returns Promise resolving to the updated school information
+ * @throws SchoolRegistrationError if update fails
+ * 
+ * Error handling:
+ * - 400: Validation error
+ * - 401: Authentication required
+ * - 404: School not found
+ * - 500: Server error
+ * - Network errors: Connection/timeout/CORS errors
+ */
+export async function updateMySchool(
+  token: string,
+  updateData: SchoolUpdateData
+): Promise<SchoolResponse> {
+  try {
+    const response = await axios.put<SchoolResponse>(
+      `${API_BASE_URL}/api/v1/schools/me`,
+      updateData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401 || statusCode === 403) {
+        const message = statusCode === 401
+          ? 'Authentication required. Please log in and try again.'
+          : 'You do not have permission to update this school.';
+        throw new SchoolRegistrationError(message, statusCode);
+      }
+
+      if (statusCode === 404) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'School not found.';
+        throw new SchoolRegistrationError(message, statusCode);
+      }
+
+      if (statusCode === 422) {
+        // Validation errors
+        const detail = errorData?.detail;
+        if (Array.isArray(detail)) {
+          const fieldErrors: Record<string, string> = {};
+          detail.forEach((error: any) => {
+            if (error.loc && error.loc.length > 1) {
+              const field = error.loc[error.loc.length - 1];
+              fieldErrors[field] = error.msg || 'Invalid value';
+            }
+          });
+          throw new SchoolRegistrationError(
+            'Please correct the errors in the form.',
+            statusCode,
+            fieldErrors
+          );
+        }
+        const message = typeof detail === 'string'
+          ? detail
+          : 'Validation error. Please check your input.';
+        throw new SchoolRegistrationError(message, statusCode);
+      }
+
+      // Generic 4xx error
+      const message = typeof errorData?.detail === 'string'
+        ? errorData.detail
+        : 'Failed to update school information.';
+      throw new SchoolRegistrationError(message, statusCode);
+    }
+
+    return response.data;
+  } catch (error) {
+    // Handle axios errors
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status || 0;
+
+      // Handle timeout errors
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        throw new SchoolRegistrationError(
+          'Request timed out. Please check your internet connection and try again.',
+          0
+        );
+      }
+
+      // Network error
+      if (error.code === 'ERR_NETWORK') {
+        throw new SchoolRegistrationError(
+          'Unable to connect to the server. Please ensure the backend services are running.',
+          0
+        );
+      }
+
+      // Re-throw SchoolRegistrationError
+      if (error instanceof SchoolRegistrationError) {
+        throw error;
+      }
+
+      // Generic axios error
+      const message = error.response?.data?.detail
+        ? String(error.response.data.detail)
+        : error.message || 'An unexpected error occurred';
+      throw new SchoolRegistrationError(message, statusCode);
+    }
+
+    // Re-throw SchoolRegistrationError
+    if (error instanceof SchoolRegistrationError) {
+      throw error;
+    }
+
+    // Handle unknown errors
+    const errorMessage = error instanceof Error
+      ? error.message
+      : 'An unexpected error occurred. Please try again.';
     throw new SchoolRegistrationError(errorMessage, 500);
   }
 }

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { TooltipProvider } from "@/components/ui/tooltip"
 import { Users, Smartphone, UserPlus } from "lucide-react"
 import { staggerContainer } from "@/lib/animations/framer-motion"
 import {
@@ -14,9 +12,6 @@ import {
   WelcomeBanner,
   SchoolInfoCard,
   RecentActivityCard,
-  DashboardSidebar,
-  DashboardHeader,
-  ActivityItem,
 } from "@/components/features/dashboard"
 import { useAuthStore } from "@/lib/store/authStore"
 import { getMySchool, type SchoolResponse } from "@/lib/api/schools"
@@ -41,37 +36,10 @@ const mockStats = [
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { token, user, logout, hasHydrated, setHasHydrated, setUser } = useAuthStore()
+  const { token, setUser } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [school, setSchool] = useState<SchoolResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
-
-  // Ensure hydration is marked as complete on client side
-  useEffect(() => {
-    // If we're on the client and hydration hasn't been marked, mark it now
-    // This handles cases where onRehydrateStorage might not fire
-    if (typeof window !== 'undefined' && !hasHydrated) {
-      // Small delay to ensure localStorage has been read
-      const timer = setTimeout(() => {
-        setHasHydrated(true)
-      }, 100)
-      return () => clearTimeout(timer)
-    }
-  }, [hasHydrated, setHasHydrated])
-
-  // Wait for hydration before checking authentication
-  useEffect(() => {
-    // Don't check authentication until store has hydrated from localStorage
-    if (!hasHydrated) {
-      return
-    }
-
-    // Now that we've hydrated, check if user is authenticated
-    if (!token || !user) {
-      router.push("/login")
-      return
-    }
-  }, [hasHydrated, token, user, router])
 
   // Fetch school data
   useEffect(() => {
@@ -96,72 +64,18 @@ export default function DashboardPage() {
     }
 
     fetchSchool()
-  }, [token])
-
-  const handleLogout = () => {
-    logout()
-    router.push("/login")
-  }
-
-  const handleSettings = () => {
-    router.push("/dashboard/settings")
-  }
+  }, [token, setUser])
 
   const handleManageSchoolSettings = () => {
     router.push("/dashboard/settings")
   }
 
-  // Show loading state while hydrating or if not authenticated
-  if (!hasHydrated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full"
-          />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </motion.div>
-      </div>
-    )
-  }
-
-  // Redirect if not authenticated (after hydration)
-  if (!token || !user) {
-    return null // Will redirect
-  }
-
-  // Get user info from token (source of truth) or from store
-  const adminFirstName = user.first_name || user.email.split("@")[0]
-  const adminFullName = `${user.first_name} ${user.last_name}`.trim() || user.email
+  // Get user info from store (layout handles authentication)
+  const { user } = useAuthStore()
+  const adminFirstName = user?.first_name || user?.email.split("@")[0] || ""
 
   return (
-    <TooltipProvider>
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex min-h-screen w-full bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50/30 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-          <DashboardSidebar
-            adminName={adminFullName}
-            adminEmail={user.email}
-            adminAvatar={null}
-            onLogout={handleLogout}
-            onSettings={handleSettings}
-          />
-
-          <SidebarInset>
-            <DashboardHeader
-              title="Dashboard"
-              adminName={adminFullName}
-              notificationCount={3}
-              onLogout={handleLogout}
-              onSettings={handleSettings}
-            />
-
-            <motion.main
+    <motion.main
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
@@ -249,10 +163,6 @@ export default function DashboardPage() {
                 />
               </motion.div>
             </motion.main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </TooltipProvider>
   )
 }
 
