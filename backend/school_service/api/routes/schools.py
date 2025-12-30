@@ -12,6 +12,7 @@ from shared.schemas.school import (
     SchoolRegistrationWithAdmin,
     SchoolRegistrationResponse,
     AdminUserDetails,
+    SchoolWithUserResponse,
 )
 from shared.schemas.user import UserCreate, UserResponse
 from school_service.api.routes.auth import get_current_user
@@ -171,21 +172,23 @@ async def register_school(
 
 @router.get(
     "/me",
-    response_model=SchoolResponse,
-    summary="Get current user's school",
+    response_model=SchoolWithUserResponse,
+    summary="Get current user's school and user details",
     description="""
-    Get the school information for the currently authenticated user.
+    Get the school information and current user details for the authenticated user.
     
     This endpoint requires authentication via JWT token in the Authorization header:
     `Authorization: Bearer <token>`
     
     The user can only access their own school's information (authorization is automatic
     based on the user's school_id from the JWT token).
+    
+    Returns both school information and the authenticated user's details.
     """,
     responses={
         200: {
-            "description": "School information retrieved successfully",
-            "model": SchoolResponse,
+            "description": "School and user information retrieved successfully",
+            "model": SchoolWithUserResponse,
         },
         401: {
             "description": "Authentication required",
@@ -214,12 +217,13 @@ async def get_my_school(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get the school information for the currently authenticated user.
+    Get the school information and current user details for the authenticated user.
     
     - **Authentication**: Required (JWT token)
     - **Authorization**: User can only access their own school (via school_id)
     
-    Returns the school information associated with the authenticated user's school_id.
+    Returns both the school information and the authenticated user's details.
+    The user information comes from the JWT token (source of truth).
     """
     school_service = SchoolService(db)
     
@@ -239,6 +243,15 @@ async def get_my_school(
             detail="School not found",
         )
     
-    # Convert to response model
-    return SchoolResponse.model_validate(school)
+    # Convert school to response model
+    school_response = SchoolResponse.model_validate(school)
+    
+    # Convert user to dict (user comes from token via get_current_user)
+    user_dict = current_user.model_dump()
+    
+    # Construct response with both school and user
+    return SchoolWithUserResponse(
+        **school_response.model_dump(),
+        user=user_dict
+    )
 

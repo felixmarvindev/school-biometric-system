@@ -83,3 +83,9 @@ class SchoolRegistrationResponse(SchoolResponse):
 
     admin_user: dict = Field(..., description="Created admin user information (without password)")
 
+
+class SchoolWithUserResponse(SchoolResponse):
+    """Schema for school response with current user information."""
+
+    user: dict = Field(..., description="Current authenticated user information (without password)")
+

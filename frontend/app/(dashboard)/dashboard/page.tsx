@@ -21,6 +21,7 @@ import {
 import { useAuthStore } from "@/lib/store/authStore"
 import { getMySchool, type SchoolResponse } from "@/lib/api/schools"
 import { CheckCircle2, Mail, Settings } from "lucide-react"
+import type { UserResponse } from "@/lib/api/auth"
 
 // Mock activity data (will be replaced with real data later)
 const mockRecentActivity = [
@@ -40,7 +41,7 @@ const mockStats = [
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { token, user, logout, hasHydrated, setHasHydrated } = useAuthStore()
+  const { token, user, logout, hasHydrated, setHasHydrated, setUser } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [school, setSchool] = useState<SchoolResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -81,6 +82,11 @@ export default function DashboardPage() {
         setIsLoading(true)
         const schoolData = await getMySchool(token)
         setSchool(schoolData)
+        
+        // Update user info from API response if available (user comes from token via API)
+        if (schoolData.user) {
+          setUser(schoolData.user as UserResponse)
+        }
       } catch (err) {
         console.error("Failed to fetch school data:", err)
         setError("Failed to load school information")
@@ -130,6 +136,7 @@ export default function DashboardPage() {
     return null // Will redirect
   }
 
+  // Get user info from token (source of truth) or from store
   const adminFirstName = user.first_name || user.email.split("@")[0]
   const adminFullName = `${user.first_name} ${user.last_name}`.trim() || user.email
 

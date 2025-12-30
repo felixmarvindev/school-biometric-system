@@ -47,20 +47,22 @@ export default function LoginPage() {
       // Call login API
       const tokenResponse = await login({ email, password })
       
-      // Decode token to get user info
+      // Decode token to get user info (token is source of truth)
       const tokenPayload = decodeJwtPayload<{
         sub?: string;
         email?: string;
+        first_name?: string;
+        last_name?: string;
         school_id?: number;
         role?: string;
       }>(tokenResponse.access_token)
       
-      // Create user object from token payload
+      // Create user object from token payload (token is source of truth)
       const user: UserResponse = {
         id: tokenPayload?.sub ? parseInt(tokenPayload.sub, 10) : 0,
         email: tokenPayload?.email || email,
-        first_name: "", // Will be fetched from API if needed
-        last_name: "", // Will be fetched from API if needed
+        first_name: tokenPayload?.first_name || "",
+        last_name: tokenPayload?.last_name || "",
         role: tokenPayload?.role || "school_admin",
         school_id: tokenPayload?.school_id || 0,
         is_active: true,

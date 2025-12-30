@@ -20,11 +20,12 @@ Create the API endpoint to fetch school information for the authenticated user's
 1. [x] GET `/api/v1/schools/me` endpoint exists
 2. [x] Endpoint requires authentication (JWT token)
 3. [x] Endpoint returns current user's school data
-4. [x] Authorization ensures user can only see their school
-5. [x] Returns 401 if not authenticated
-6. [x] Returns 404 if school not found
-7. [x] Response includes school information
-8. [x] API endpoint is documented
+4. [x] Endpoint returns current user's details (from token)
+5. [x] Authorization ensures user can only see their school
+6. [x] Returns 401 if not authenticated
+7. [x] Returns 404 if school not found
+8. [x] Response includes school and user information
+9. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -43,8 +44,9 @@ backend/school_service/core/security.py (token validation already exists) ✅
 # routes/schools.py
 from school_service.api.routes.auth import get_current_user
 from shared.schemas.user import UserResponse
+from shared.schemas.school import SchoolWithUserResponse
 
-@router.get("/me", response_model=SchoolResponse)
+@router.get("/me", response_model=SchoolWithUserResponse)
 async def get_my_school(
     current_user: UserResponse = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -55,14 +57,27 @@ async def get_my_school(
     if not school or school.is_deleted:
         raise HTTPException(status_code=404, detail="School not found")
     
-    return SchoolResponse.model_validate(school)
+    # Convert school to response model
+    school_response = SchoolResponse.model_validate(school)
+    
+    # Convert user to dict (user comes from token via get_current_user)
+    user_dict = current_user.model_dump()
+    
+    # Return both school and user
+    return SchoolWithUserResponse(
+        **school_response.model_dump(),
+        user=user_dict
+    )
 ```
 
-**Note:** `get_current_user` dependency already exists in `backend/school_service/api/routes/auth.py` and handles:
-- JWT token extraction and validation
-- User lookup from database
-- Active user check
-- Returns `UserResponse` with `school_id` for authorization
+**Note:** 
+- `get_current_user` dependency already exists in `backend/school_service/api/routes/auth.py` and handles:
+  - JWT token extraction and validation
+  - User lookup from database
+  - Active user check
+  - Returns `UserResponse` with `school_id` for authorization
+- JWT token payload includes: `sub`, `email`, `first_name`, `last_name`, `school_id`, `role`
+- Token is the source of truth for user information
 
 ### Dependencies
 
@@ -104,7 +119,7 @@ async def get_my_school(
 Comprehensive test suite created in `backend/school_service/tests/test_dashboard_api.py`:
 
 ### Test Cases
-- ✅ `test_get_my_school_success` - Successful retrieval with valid token
+- ✅ `test_get_my_school_success` - Successful retrieval with valid token (returns school + user)
 - ✅ `test_get_my_school_without_token` - 401 when no token provided
 - ✅ `test_get_my_school_with_invalid_token` - 401 with invalid token
 - ✅ `test_get_my_school_with_expired_token` - 401 with expired token
@@ -136,4 +151,7 @@ pytest school_service/tests/test_dashboard_api.py -v
 - Verify authorization (user can only access their school)
 - Consider caching school data if frequently accessed
 - Log access for security auditing
+- **Token as Source of Truth**: JWT token payload includes `first_name` and `last_name` for user information
+- **Response Structure**: Endpoint returns both school and user information in `SchoolWithUserResponse`
+- **User Information**: User details come from the JWT token (via `get_current_user`), ensuring consistency
 

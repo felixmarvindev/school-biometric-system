@@ -72,17 +72,25 @@ export function LoginForm() {
 }
 
 // backend routes/auth.py
-@router.post("/login")
-async def login(credentials: LoginCredentials):
-    user = await user_service.authenticate(
-        credentials.email,
-        credentials.password
+@router.post("/login/json")
+async def login_json(login_data: UserLogin):
+    user = await user_service.authenticate_user(
+        login_data.email,
+        login_data.password
     )
     if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Incorrect email or password")
     
-    token = create_access_token({"sub": user.id})
-    return {"access_token": token, "token_type": "bearer", "user": user}
+    # Token includes user details (source of truth)
+    token = create_access_token({
+        "sub": str(user.id),
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "school_id": user.school_id,
+        "role": user.role,
+    })
+    return {"access_token": token, "token_type": "bearer"}
 ```
 
 ### Dependencies

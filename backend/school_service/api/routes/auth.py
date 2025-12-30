@@ -67,11 +67,13 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token
+    # Create access token with user details
     access_token = create_access_token(
         data={
             "sub": str(user.id),  # 'sub' is standard JWT claim for subject
             "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "school_id": user.school_id,
             "role": user.role,
         }
@@ -123,11 +125,13 @@ async def login_json(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token
+    # Create access token with user details
     access_token = create_access_token(
         data={
             "sub": str(user.id),
             "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
             "school_id": user.school_id,
             "role": user.role,
         }

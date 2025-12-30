@@ -372,7 +372,8 @@ async def test_login_token_contains_user_info(
     Test that JWT token contains all necessary user information.
     
     Acceptance Criteria:
-    - Token contains user ID, email, school_id, and role
+    - Token contains user ID, email, first_name, last_name, school_id, and role
+    - Token is the source of truth for user information
     """
     login_data = {
         "email": test_user.email,
@@ -390,6 +391,8 @@ async def test_login_token_contains_user_info(
     assert payload is not None
     assert payload.get("sub") == str(test_user.id)
     assert payload.get("email") == test_user.email
+    assert payload.get("first_name") == test_user.first_name
+    assert payload.get("last_name") == test_user.last_name
     assert payload.get("school_id") == test_user.school_id
     assert payload.get("role") == test_user.role
     assert "exp" in payload  # Expiration time

@@ -68,3 +68,19 @@ export function getRoleFromToken(token: string): string | null {
   return payload?.role || null;
 }
 
+/**
+ * Get first name from JWT token.
+ */
+export function getFirstNameFromToken(token: string): string | null {
+  const payload = decodeJwtPayload<{ first_name?: string }>(token);
+  return payload?.first_name || null;
+}
+
+/**
+ * Get last name from JWT token.
+ */
+export function getLastNameFromToken(token: string): string | null {
+  const payload = decodeJwtPayload<{ last_name?: string }>(token);
+  return payload?.last_name || null;
+}
+

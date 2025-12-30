@@ -45,6 +45,7 @@ export interface SchoolResponse {
   created_at: string; // ISO datetime
   updated_at: string | null;
   admin_user?: AdminUserInfo; // Included when registering with admin
+  user?: AdminUserInfo; // Included when fetching /me endpoint
 }
 
 /**

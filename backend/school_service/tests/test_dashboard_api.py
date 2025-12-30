@@ -104,7 +104,7 @@ async def test_get_my_school_success(
 
     data = response.json()
 
-    # Verify response structure
+    # Verify response structure includes school
     assert "id" in data
     assert data["id"] == test_school.id
     assert data["name"] == test_school.name
@@ -115,6 +115,16 @@ async def test_get_my_school_success(
     assert data["is_deleted"] is False
     assert "created_at" in data
     assert "updated_at" in data
+    
+    # Verify response includes user information
+    assert "user" in data
+    user_data = data["user"]
+    assert user_data["id"] == test_user.id
+    assert user_data["email"] == test_user.email
+    assert user_data["first_name"] == test_user.first_name
+    assert user_data["last_name"] == test_user.last_name
+    assert user_data["school_id"] == test_user.school_id
+    assert user_data["role"] == test_user.role
 
 
 @pytest.mark.asyncio
