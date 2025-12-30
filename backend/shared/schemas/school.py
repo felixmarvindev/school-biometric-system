@@ -57,3 +57,29 @@ class SchoolResponse(SchoolBase):
     class Config:
         from_attributes = True
 
+
+class AdminUserDetails(BaseModel):
+    """Schema for admin user details during school registration."""
+
+    email: EmailStr = Field(..., description="Admin email address")
+    first_name: str = Field(..., min_length=1, max_length=100, description="Admin first name")
+    last_name: str = Field(..., min_length=1, max_length=100, description="Admin last name")
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=72,
+        description="Admin password (must be at least 8 characters and no more than 72 bytes with uppercase, lowercase, digit, and special character)"
+    )
+
+
+class SchoolRegistrationWithAdmin(SchoolBase):
+    """Schema for school registration with admin user creation."""
+
+    admin: AdminUserDetails = Field(..., description="Admin user details for the school")
+
+
+class SchoolRegistrationResponse(SchoolResponse):
+    """Schema for school registration response including admin user info."""
+
+    admin_user: dict = Field(..., description="Created admin user information (without password)")
+

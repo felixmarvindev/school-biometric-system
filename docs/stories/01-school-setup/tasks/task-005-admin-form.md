@@ -17,25 +17,30 @@ Create the admin account creation form component that appears after school regis
 
 ## Acceptance Criteria
 
-1. [ ] Admin account form component created
-2. [ ] Form appears after school registration
-3. [ ] Form includes: full name, email, password, confirm password
-4. [ ] Password strength indicator works
-5. [ ] Password requirements are displayed
-6. [ ] Password confirmation validation works
-7. [ ] Form submission creates user account
-8. [ ] Success message shown after account creation
-9. [ ] Form is accessible and responsive
+1. [x] `AdminAccountFormSimple` reusable component created (can be used independently)
+2. [x] Form appears as Step 2 in registration flow
+3. [x] Form includes: first name, last name, email, password, confirm password
+4. [x] Password strength indicator works with animated progress bar
+5. [x] Password requirements validated (uppercase, lowercase, number, special char, min 8 chars)
+6. [x] Password confirmation validation works
+7. [x] Password visibility toggle works (eye icon)
+8. [x] Form submission sends both school and admin data in single API call
+9. [x] Success screen shown after account creation (displays both school and admin info)
+10. [x] Automatic redirect to login page after 3 seconds
+11. [x] Field-level error handling implemented
+12. [x] Form is accessible and responsive
+13. [x] Component is reusable for future admin creation features
 
 ## Technical Details
 
 ### Files to Create/Modify
 
 ```
-frontend/app/components/features/auth/AdminAccountForm.tsx
-frontend/app/(auth)/register/page.tsx (update to include form)
-frontend/app/lib/api/auth.ts
-frontend/app/lib/validations/user.ts
+frontend/components/features/auth/AdminAccountFormSimple.tsx (reusable component)
+frontend/app/(auth)/register/page.tsx (two-step registration flow)
+frontend/lib/api/schools.ts (combined registration endpoint)
+frontend/lib/validations/school.ts (combined validation schema)
+frontend/lib/validations/user.ts (admin account validation)
 ```
 
 ### Key Code Patterns
@@ -71,10 +76,11 @@ export function AdminAccountForm({ schoolId }: { schoolId: number }) {
 
 ### Dependencies
 
-- Task 004 (User model and API must exist)
-- React Hook Form
-- Zod
-- shadcn/ui components
+- Task 004 (User model and service must exist)
+- Task 002 (Combined registration API endpoint)
+- Framer Motion for animations
+- Zod for validation
+- shadcn/ui components (Button, Input, Label, Alert)
 
 ## Visual Testing
 
@@ -97,14 +103,17 @@ export function AdminAccountForm({ schoolId }: { schoolId: number }) {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
+- [x] Code written and follows standards
+- [x] Component is reusable (can be used independently)
 - [ ] Component tests written and passing
-- [ ] Password strength indicator works
-- [ ] Form validation works correctly
-- [ ] Responsive design verified
-- [ ] Accessibility verified
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Password strength indicator works with real-time updates
+- [x] Form validation works correctly (client and server)
+- [x] Transaction rollback tested (if admin creation fails, school is not created)
+- [x] Response validation before commit (prevents inconsistent state)
+- [x] Responsive design verified
+- [x] Accessibility verified
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 

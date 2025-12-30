@@ -28,6 +28,25 @@ class SchoolRepository:
         await self.db.refresh(school)
         return school
 
+    async def create_without_commit(self, school_data: SchoolCreate) -> School:
+        """
+        Create a new school without committing.
+        
+        Useful for transactions where you want to commit multiple operations together.
+        Caller is responsible for committing the transaction.
+        """
+        school = School(
+            name=school_data.name,
+            code=school_data.code.upper(),  # Normalize to uppercase
+            address=school_data.address,
+            phone=school_data.phone,
+            email=school_data.email,
+        )
+        self.db.add(school)
+        # Flush to get the ID without committing
+        await self.db.flush()
+        return school
+
     async def get_by_id(self, school_id: int) -> Optional[School]:
         """Get school by ID."""
         result = await self.db.execute(

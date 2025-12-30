@@ -25,7 +25,9 @@ Create the User database model with school association, password hashing, and au
 6. [x] JWT token generation works
 7. [x] JWT token validation works
 8. [x] Login endpoint exists
-9. [ ] User creation during registration works
+9. [x] User creation during registration works (combined with school in atomic transaction)
+10. [x] `create_user_without_commit()` method implemented for transaction support
+11. [x] Transaction rollback implemented if user creation fails
 
 ## Technical Details
 
@@ -35,6 +37,8 @@ Create the User database model with school association, password hashing, and au
 backend/school_service/models/user.py
 backend/school_service/core/security.py
 backend/school_service/api/routes/auth.py
+backend/school_service/services/user_service.py (create_user, create_user_without_commit)
+backend/school_service/repositories/user_repository.py (create_user, create_user_without_commit)
 backend/alembic/versions/XXXX_create_users_table.py
 ```
 
@@ -130,4 +134,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 - JWT tokens should have expiration
 - Consider refresh tokens for better security
 - Log authentication attempts for security
+- **Transaction Support**: `create_user_without_commit()` allows user creation as part of larger transactions
+- **Atomic Operations**: User creation during registration is part of atomic transaction with school creation
+- **Rollback**: If user creation fails, school creation is automatically rolled back
 

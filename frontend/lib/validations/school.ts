@@ -1,11 +1,14 @@
 /**
  * Zod validation schemas for School entities.
  * 
- * TODO: This file will contain validation schemas for school registration.
  * Matches the backend Pydantic schemas in shared/schemas/school.py
  */
 
 import { z } from 'zod';
+import {
+  adminAccountSchema,
+  type AdminAccountFormData,
+} from '@/lib/validations/user';
 
 /**
  * School registration form validation schema.
@@ -55,4 +58,49 @@ export const schoolRegistrationSchema = z.object({
 });
 
 export type SchoolRegistrationFormData = z.infer<typeof schoolRegistrationSchema>;
+
+/**
+ * Combined school registration with admin user schema.
+ * This combines school data with admin user data for a single registration flow.
+ */
+export const schoolRegistrationWithAdminSchema = schoolRegistrationSchema.extend({
+  admin: z.object({
+    email: z
+      .string()
+      .min(1, 'Email is required')
+      .email('Please enter a valid email address'),
+    first_name: z
+      .string()
+      .min(1, 'First name is required')
+      .max(100, 'First name must be less than 100 characters'),
+    last_name: z
+      .string()
+      .min(1, 'Last name is required')
+      .max(100, 'Last name must be less than 100 characters'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .max(72, 'Password cannot be longer than 72 bytes')
+      .refine(
+        (val) => {
+          const encoder = new TextEncoder();
+          const bytes = encoder.encode(val);
+          return bytes.length <= 72;
+        },
+        {
+          message: 'Password cannot be longer than 72 bytes. Please use a shorter password.',
+        }
+      )
+      .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+      .regex(/[a-z]/, 'Password must contain a lowercase letter')
+      .regex(/[0-9]/, 'Password must contain a number')
+      .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, 'Password must contain a special character (!@#$%^&*)'),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  }),
+});
+
+export type SchoolRegistrationWithAdminFormData = z.infer<typeof schoolRegistrationWithAdminSchema>;
 

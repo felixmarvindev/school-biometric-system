@@ -3,19 +3,25 @@
 ## Story-Level Acceptance Criteria
 
 ### School Registration
-- [ ] School can be registered through web form
-- [ ] School code is unique across system
-- [ ] All required fields are validated
-- [ ] Registration completes in < 2 seconds
-- [ ] Success message appears after registration
-- [ ] School data is stored in database
+- [x] School can be registered through two-step web form
+- [x] School code is unique across system
+- [x] All required fields are validated (client and server)
+- [x] Registration completes in < 2 seconds
+- [x] Success screen appears after registration (shows both school and admin)
+- [x] School data is stored in database
+- [x] Registration uses atomic transaction (school + admin together)
 
 ### Admin Account Creation
-- [ ] Admin account can be created during registration
-- [ ] Password meets strength requirements
-- [ ] Password is hashed before storage
-- [ ] Admin is associated with school
-- [ ] Account creation completes successfully
+- [x] Admin account is created as Step 2 in registration flow
+- [x] Admin account form is reusable component
+- [x] Password meets strength requirements (validated client and server)
+- [x] Password strength indicator shows real-time feedback
+- [x] Password is hashed before storage (bcrypt)
+- [x] Admin is associated with school (school_id foreign key)
+- [x] Account creation completes successfully
+- [x] Both school and admin created in single atomic transaction
+- [x] Transaction rolls back if admin creation fails (no orphaned school)
+- [x] Response validation happens before commit (prevents inconsistent state)
 
 ### Dashboard Access
 - [ ] Admin can log in with credentials
@@ -34,20 +40,25 @@
 ## Phase 1: School Registration
 
 ### Visual Criteria
-- [ ] Registration form is accessible at `/register`
-- [ ] Form fields are clearly labeled
-- [ ] Required fields are marked with asterisk
-- [ ] Form has proper spacing and layout
-- [ ] Error messages are visible and clear
-- [ ] Success message appears after submission
+- [x] Registration form is accessible at `/register`
+- [x] Two-step registration flow with progress indicator
+- [x] Step 1: School information form
+- [x] Step 2: Admin account form
+- [x] Form fields are clearly labeled with placeholders
+- [x] Required fields are marked with asterisk
+- [x] Form has proper spacing and layout with gradient background
+- [x] Error messages are visible and clear (field-level)
+- [x] Success screen appears after submission (shows both school and admin)
+- [x] Automatic redirect to login page after 3 seconds
 
 ### Functional Criteria
-- [ ] School name is required
-- [ ] School code is required and unique
-- [ ] Email format is validated
-- [ ] Phone format is validated
-- [ ] Form submission creates school record
-- [ ] Database stores all fields correctly
+- [x] School name is required
+- [x] School code is required and unique
+- [x] Email format is validated (optional field)
+- [x] Phone format is validated (optional field)
+- [x] Form submission creates both school and admin in single API call
+- [x] Database stores all fields correctly
+- [x] Atomic transaction ensures both succeed or both fail
 
 ### Performance Criteria
 - [ ] Form loads in < 500ms
@@ -57,20 +68,31 @@
 ## Phase 2: Admin User Creation
 
 ### Visual Criteria
-- [ ] Admin form appears after school registration
-- [ ] Password strength indicator is visible
-- [ ] Password requirements are listed
-- [ ] Password confirmation field matches password
-- [ ] Error messages appear for validation failures
+- [x] Admin form appears as Step 2 after school registration (Step 1)
+- [x] Step progress indicator shows both steps
+- [x] Step header with icon, title, and description
+- [x] Password strength indicator is visible with animated progress bar
+- [x] Password strength updates in real-time as user types
+- [x] Password requirements validated (uppercase, lowercase, number, special char)
+- [x] Password confirmation field validates match
+- [x] Password visibility toggle (eye icon)
+- [x] Error messages appear for validation failures (field-level)
+- [x] "Back" button to return to Step 1
+- [x] Success screen shows both school name and admin email
 
 ### Functional Criteria
-- [ ] Full name is required
-- [ ] Email is required and validated
-- [ ] Password meets minimum strength (8 chars, mixed case, numbers)
-- [ ] Password confirmation must match
-- [ ] Password is hashed with bcrypt
-- [ ] User record is created in database
-- [ ] User.school_id matches school.id
+- [x] First name is required
+- [x] Last name is required
+- [x] Email is required and validated
+- [x] Email uniqueness validated (no duplicate admin emails)
+- [x] Password meets minimum strength (8 chars, mixed case, numbers, special char)
+- [x] Password confirmation must match
+- [x] Password is hashed with bcrypt before storage
+- [x] User record is created in database
+- [x] User.school_id matches school.id
+- [x] Both school and user created in single atomic transaction
+- [x] Transaction rolls back if user creation fails
+- [x] Response validation before commit prevents inconsistent state
 
 ### Security Criteria
 - [ ] Password is never stored in plain text

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Enable schools to register in the system through a web form, creating the foundation for multi-tenant architecture.
+Enable schools to register in the system through a two-step web form (school info + admin account), creating the foundation for multi-tenant architecture. Both school and admin are created in a single atomic transaction.
 
 ## Duration Estimate
 
@@ -20,26 +20,34 @@ Enable schools to register in the system through a web form, creating the founda
 
 ### Backend Changes
 
-- [ ] Create `School` model with required fields
-- [ ] Create database migration for `schools` table
-- [ ] Create `SchoolCreate` Pydantic schema
-- [ ] Create POST `/api/v1/schools/register` endpoint
-- [ ] Implement school code uniqueness validation
-- [ ] Add input validation and sanitization
+- [x] Create `School` model with required fields
+- [x] Create database migration for `schools` table
+- [x] Create `SchoolCreate` Pydantic schema
+- [x] Create POST `/api/v1/schools/register` endpoint (combined with admin creation)
+- [x] Implement school code uniqueness validation
+- [x] Add input validation and sanitization
+- [x] Implement atomic transaction for school + admin creation
+- [x] Add response validation before commit (prevents inconsistent state)
+- [x] Implement transaction rollback on any failure
 - [ ] Create unit tests for registration logic
 - [ ] Create integration tests for API endpoint
 
 ### Frontend Changes
 
-- [ ] Create registration page route (`/register`)
-- [ ] Create `SchoolRegistrationForm` component
-- [ ] Create form validation logic
-- [ ] Create form submission handler
-- [ ] Add loading states during submission
-- [ ] Add success/error message display
-- [ ] Add form field components (input, textarea)
-- [ ] Create responsive layout
-- [ ] Add form accessibility features
+- [x] Create registration page route (`/register`)
+- [x] Create `SchoolRegistrationFormSimple` reusable component
+- [x] Create two-step registration flow (school info → admin account)
+- [x] Create step progress indicator component
+- [x] Create step header component with animations
+- [x] Create form validation logic (client-side)
+- [x] Create form submission handler (single API call for both)
+- [x] Add loading states during submission
+- [x] Add success screen component with registered data
+- [x] Add error message display with field-level errors
+- [x] Add form field components (input, textarea, label)
+- [x] Create responsive layout with gradient background
+- [x] Add form accessibility features (ARIA labels, keyboard navigation)
+- [x] Add placeholder text to all form fields
 
 ### DevOps/Infrastructure
 
@@ -70,17 +78,28 @@ At the end of this phase, you should be able to:
 - Enter phone number (optional, formatted)
 - Enter email (optional, validated)
 
-### 3. Submit Form
-- Click "Register" button
-- See loading indicator during submission
-- See success message on successful registration
+### 3. Submit School Information
+- Click "Next: Admin Account" button
+- See loading indicator during validation
+- Progress to Step 2 (Admin Account) if validation passes
 - See error messages for validation failures
-- See error message if school code already exists
+- See error message if school code already exists (after admin step submission)
 
-### 4. Verify Data
-- Check database to confirm school record created
+### 4. Complete Registration (Step 2)
+- Fill admin account form (first name, last name, email, password, confirm password)
+- See password strength indicator update in real-time
+- Toggle password visibility
+- Click "Complete Registration" button
+- See loading state with spinner
+- See success screen with school name and admin email
+- Automatically redirected to login page after 3 seconds
+
+### 5. Verify Data
+- Check database to confirm both school and admin user records created
+- Verify school and admin are created in single transaction (atomic)
 - Verify timestamps (created_at, updated_at) are set
-- Verify is_deleted is false
+- Verify is_deleted is false for both
+- Verify admin.school_id matches school.id
 
 ### Success Screenshots
 
@@ -141,16 +160,27 @@ At the end of this phase, you should be able to:
    - Explain school code uniqueness
    - Mention optional vs required fields
 
-2. **Fill and Submit** (1 minute)
+2. **Fill School Information (Step 1)** (30 seconds)
    - Fill form with sample data:
      - Name: "Greenfield Academy"
      - Code: "GFA-001"
-     - Address: "Nairobi, Kenya"
-     - Phone: "+254 712 345 678"
+     - Address: "Nairobi, Kenya" (optional)
+     - Phone: "+254 712 345 678" (optional)
+     - Email: "admin@greenfield.ac.ke" (optional)
+   - Click "Next: Admin Account"
+   - Show progress indicator moving to step 2
+
+3. **Fill Admin Account (Step 2)** (30 seconds)
+   - Fill admin form:
+     - First Name: "John"
+     - Last Name: "Doe"
      - Email: "admin@greenfield.ac.ke"
-   - Click "Register"
-   - Show success message
-   - Explain what happens in the background
+     - Password: "SecurePass123!"
+     - Confirm Password: "SecurePass123!"
+   - Show password strength indicator
+   - Click "Complete Registration"
+   - Show success screen with both school and admin info
+   - Explain atomic transaction (both created together or neither)
 
 3. **Show Validation** (30 seconds)
    - Try submitting empty form
@@ -160,15 +190,17 @@ At the end of this phase, you should be able to:
 
 ### Talking Points
 
-- "Registration takes less than a minute"
+- "Registration is a simple two-step process"
 - "Each school gets a unique code for identification"
 - "All data is validated before saving"
+- "School and admin are created together in a single transaction - if anything fails, nothing is saved"
+- "This ensures data consistency and prevents orphaned records"
 - "This creates the foundation for the school's isolated data"
 
 ### Expected Questions
 
 **Q: What happens after registration?**  
-A: The next phase adds admin account creation, then they can log in.
+A: The admin account is created during registration. After the success screen, they're automatically redirected to the login page where they can log in with their credentials.
 
 **Q: Can schools change their code later?**  
 A: School code should remain stable, but we'll add ability to update other information in Phase 4.

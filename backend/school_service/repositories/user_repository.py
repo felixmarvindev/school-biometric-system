@@ -35,6 +35,25 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
+    async def create_user_without_commit(self, user_data: dict) -> User:
+        """
+        Create a new user without committing.
+        
+        Useful for transactions where you want to commit multiple operations together.
+        Caller is responsible for committing the transaction.
+        
+        Args:
+            user_data: Dictionary containing user data (email, hashed_password, etc.)
+
+        Returns:
+            Created User instance (not yet committed)
+        """
+        user = User(**user_data)
+        self.db.add(user)
+        # Flush to get the ID without committing
+        await self.db.flush()
+        return user
+
     async def get_user_by_id(self, user_id: int) -> User | None:
         """
         Get user by ID.

@@ -18,15 +18,19 @@ Create the frontend registration form component with validation, error handling,
 ## Acceptance Criteria
 
 1. [x] Registration page route exists at `/register`
-2. [x] `SchoolRegistrationForm` component created
-3. [x] Form includes all required fields (name, code, address, phone, email)
-4. [x] Client-side validation works for all fields
-5. [x] Form submission calls registration API
-6. [x] Loading state shown during submission
-7. [x] Success message displayed on successful registration
-8. [x] Error messages displayed for validation failures
-9. [x] Form is responsive (desktop, tablet, mobile)
-10. [x] Form is accessible (keyboard navigation, screen readers)
+2. [x] `SchoolRegistrationFormSimple` reusable component created
+3. [x] Two-step registration flow implemented (school info → admin account)
+4. [x] Step progress indicator component created
+5. [x] Step header component with animations created
+6. [x] Form includes all required fields (name, code) and optional fields (address, phone, email)
+7. [x] Client-side validation works for all fields
+8. [x] Form submission sends both school and admin data in single API call
+9. [x] Loading state shown during submission
+10. [x] Success screen component displays both school and admin information
+11. [x] Error messages displayed for validation failures (field-level)
+12. [x] Form is responsive (desktop, tablet, mobile)
+13. [x] Form is accessible (keyboard navigation, screen readers)
+14. [x] Placeholder text added to all form fields
 
 ## Technical Details
 
@@ -34,9 +38,13 @@ Create the frontend registration form component with validation, error handling,
 
 ```
 frontend/app/(auth)/register/page.tsx
-frontend/app/components/features/school/SchoolRegistrationForm.tsx
-frontend/app/lib/api/schools.ts
-frontend/app/lib/validations/school.ts
+frontend/components/features/school/SchoolRegistrationFormSimple.tsx
+frontend/components/features/auth/AdminAccountFormSimple.tsx
+frontend/components/features/auth/StepProgressIndicator.tsx
+frontend/components/features/auth/StepHeader.tsx
+frontend/components/features/auth/RegistrationSuccessScreen.tsx
+frontend/lib/api/schools.ts
+frontend/lib/validations/school.ts
 ```
 
 ### Key Code Patterns
@@ -83,10 +91,10 @@ export function SchoolRegistrationForm() {
 
 ### Dependencies
 
-- Task 002 (API endpoint must exist)
-- React Hook Form installed
-- Zod installed
-- shadcn/ui components (Button, Input, Textarea)
+- Task 002 (API endpoint must exist - combined school + admin registration)
+- Framer Motion for animations
+- Zod for validation
+- shadcn/ui components (Button, Input, Textarea, Label, Card, Alert)
 
 ## Visual Testing
 

@@ -14,13 +14,38 @@ def hash_password(password: str) -> str:
     """
     Hash a plain text password using bcrypt.
     
+    Note: bcrypt has a 72-byte limit. This function validates and handles this limitation.
+    
     Args:
-        password: Plain text password to hash
+        password: Plain text password to hash (must be <= 72 bytes)
     
     Returns:
         Hashed password string
+    
+    Raises:
+        ValueError: If password exceeds 72 bytes or other validation fails
     """
-    return pwd_context.hash(password)
+    # Check byte length (bcrypt has a 72-byte limit)
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        raise ValueError("Password cannot be longer than 72 bytes. Please use a shorter password.")
+    
+    try:
+        return pwd_context.hash(password)
+    except ValueError as e:
+        # Catch bcrypt-specific errors and convert to user-friendly messages
+        error_msg = str(e)
+        if "cannot be longer than 72 bytes" in error_msg.lower():
+            raise ValueError("Password cannot be longer than 72 bytes. Please use a shorter password.") from e
+        # Re-raise other ValueError exceptions as-is
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors from bcrypt/passlib
+        error_msg = str(e)
+        if "72 bytes" in error_msg or "truncate" in error_msg.lower():
+            raise ValueError("Password cannot be longer than 72 bytes. Please use a shorter password.") from e
+        # For other errors, wrap in a generic message
+        raise ValueError(f"Error hashing password: {error_msg}") from e
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -94,6 +119,7 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     
     Requirements:
     - Minimum 8 characters
+    - Maximum 72 bytes (bcrypt limitation)
     - At least one uppercase letter
     - At least one lowercase letter
     - At least one digit
@@ -107,6 +133,11 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
     """
     if len(password) < 8:
         return False, "Password must be at least 8 characters long"
+    
+    # Check byte length (bcrypt has a 72-byte limit)
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        return False, "Password cannot be longer than 72 bytes. Please use a shorter password."
     
     if not any(c.isupper() for c in password):
         return False, "Password must contain at least one uppercase letter"

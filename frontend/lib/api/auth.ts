@@ -1,24 +1,21 @@
 /**
- * API client functions for School management.
- * 
- * TODO: Implement API calls to the School Service via API Gateway.
+ * API client functions for Authentication.
  * 
  * Base URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
- * Endpoint: POST /api/v1/schools/register
+ * Endpoints:
+ * - POST /api/v1/auth/register - Register a new user
+ * - POST /api/v1/auth/login/json - User login (JSON body)
  */
 
 import axios from 'axios';
-import type {
-  SchoolRegistrationFormData,
-  SchoolRegistrationWithAdminFormData,
-} from '@/lib/validations/school';
+import type { AdminAccountFormData } from '@/lib/validations/user';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
 /**
- * Admin user info in registration response.
+ * Response type from the API after successful user registration.
  */
-export interface AdminUserInfo {
+export interface UserResponse {
   id: number;
   email: string;
   first_name: string;
@@ -29,22 +26,6 @@ export interface AdminUserInfo {
   is_deleted: boolean;
   created_at: string; // ISO datetime
   updated_at: string | null;
-}
-
-/**
- * Response type from the API after successful registration.
- */
-export interface SchoolResponse {
-  id: number;
-  name: string;
-  code: string; // Uppercase
-  address: string | null;
-  phone: string | null;
-  email: string | null;
-  is_deleted: boolean;
-  created_at: string; // ISO datetime
-  updated_at: string | null;
-  admin_user?: AdminUserInfo; // Included when registering with admin
 }
 
 /**
@@ -61,48 +42,39 @@ export interface ApiError {
 /**
  * Custom error class for API errors with status code and details.
  */
-export class SchoolRegistrationError extends Error {
+export class UserRegistrationError extends Error {
   constructor(
     message: string,
     public statusCode: number,
     public fieldErrors?: Record<string, string>
   ) {
     super(message);
-    this.name = 'SchoolRegistrationError';
+    this.name = 'UserRegistrationError';
   }
 }
 
 /**
- * Register a new school with admin user.
+ * Register a new user (admin account).
  * 
- * @param data - School registration data with admin user details
- * @returns Promise resolving to the created school and admin user
- * @throws SchoolRegistrationError if registration fails
+ * @param data - User registration data (includes school_id)
+ * @returns Promise resolving to the created user
+ * @throws UserRegistrationError if registration fails
  * 
  * Comprehensive error handling:
- * - 400: Bad request (invalid data format)
+ * - 400: Bad request (invalid data format, email already exists)
  * - 422: Validation errors (returns fieldErrors map)
- * - 409: Duplicate code or email error
- * - 401/403: Authentication/authorization errors
  * - 500: Server error
- * - 502/503/504: Gateway/service unavailable errors
  * - Network errors: Connection/timeout/CORS errors
  */
-export async function registerSchool(
-  data: SchoolRegistrationWithAdminFormData
-): Promise<SchoolResponse> {
+export async function registerUser(
+  data: AdminAccountFormData & { school_id: number }
+): Promise<UserResponse> {
   try {
-    // Prepare request payload (exclude confirmPassword from admin)
-    const { admin, ...schoolData } = data;
-    const { confirmPassword, ...adminData } = admin;
+    // Prepare request payload (exclude confirmPassword)
+    const { confirmPassword, ...payload } = data;
     
-    const payload = {
-      ...schoolData,
-      admin: adminData,
-    };
-    
-    const response = await axios.post<SchoolResponse>(
-      `${API_BASE_URL}/api/v1/schools/register`,
+    const response = await axios.post<UserResponse>(
+      `${API_BASE_URL}/api/v1/auth/register`,
       payload,
       {
         headers: {
@@ -142,30 +114,28 @@ export async function registerSchool(
           });
         } else if (typeof errorData.detail === 'string') {
           // Single string error message
-          throw new SchoolRegistrationError(errorData.detail, statusCode);
+          throw new UserRegistrationError(errorData.detail, statusCode);
         }
         
         const message = Object.keys(fieldErrors).length > 0
           ? 'Please correct the validation errors below'
           : 'Validation failed. Please check your input.';
         
-        throw new SchoolRegistrationError(message, statusCode, fieldErrors);
+        throw new UserRegistrationError(message, statusCode, fieldErrors);
       }
       
-      // Handle 400 - Bad request
+      // Handle 400 - Bad request (email already exists, weak password, etc.)
       if (statusCode === 400) {
         const message = typeof errorData?.detail === 'string'
           ? errorData.detail
           : 'Invalid request. Please check your input and try again.';
-        throw new SchoolRegistrationError(message, statusCode);
-      }
-      
-      // Handle 409 - Duplicate code (conflict)
-      if (statusCode === 409) {
-        const message = typeof errorData?.detail === 'string'
-          ? errorData.detail
-          : 'School code already exists. Please use a different code.';
-        throw new SchoolRegistrationError(message, statusCode, { code: message });
+        
+        // Check if it's an email duplicate error
+        if (message.toLowerCase().includes('email') && message.toLowerCase().includes('already')) {
+          throw new UserRegistrationError(message, statusCode, { email: message });
+        }
+        
+        throw new UserRegistrationError(message, statusCode);
       }
       
       // Handle 401/403 - Authentication/Authorization
@@ -173,29 +143,60 @@ export async function registerSchool(
         const message = statusCode === 401
           ? 'Authentication required. Please log in and try again.'
           : 'You do not have permission to perform this action.';
-        throw new SchoolRegistrationError(message, statusCode);
+        throw new UserRegistrationError(message, statusCode);
       }
       
       // Handle other 4xx errors
       const message = typeof errorData?.detail === 'string'
         ? errorData.detail
         : `Request failed with status ${statusCode}. Please try again.`;
-      throw new SchoolRegistrationError(message, statusCode);
+      throw new UserRegistrationError(message, statusCode);
     }
     
     return response.data;
   } catch (error) {
-    console.log('error', error);
     // Handle axios errors
     if (axios.isAxiosError(error)) {
       const statusCode = error.response?.status || 500;
       const errorData = error.response?.data as ApiError | undefined;
       
-
+      // Handle 500 - Internal server error
+      if (statusCode === 500) {
+        const message = typeof errorData?.detail === 'string'
+          ? errorData.detail
+          : 'Server error. Our team has been notified. Please try again later.';
+        throw new UserRegistrationError(message, statusCode);
+      }
+      
+      // Handle 502 - Bad Gateway
+      if (statusCode === 502) {
+        throw new UserRegistrationError(
+          'Service temporarily unavailable. Please try again in a few moments.',
+          statusCode
+        );
+      }
+      
+      // Handle 503 - Service Unavailable
+      if (statusCode === 503) {
+        throw new UserRegistrationError(
+          'Service is currently unavailable. Please try again later.',
+          statusCode
+        );
+      }
+      
+      // Handle 504 - Gateway Timeout
+      if (statusCode === 504) {
+        throw new UserRegistrationError(
+          'Request timed out. Please check your connection and try again.',
+          statusCode
+        );
+      }
+      
+      // Handle network errors (no response received)
       if (!error.response) {
         // Connection timeout
         if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-          throw new SchoolRegistrationError(
+          throw new UserRegistrationError(
             'Request timed out. Please check your internet connection and try again.',
             0
           );
@@ -203,7 +204,7 @@ export async function registerSchool(
         
         // Network error (server unreachable, CORS, etc.)
         if (error.code === 'ERR_NETWORK') {
-          throw new SchoolRegistrationError(
+          throw new UserRegistrationError(
             'Unable to connect to the server. Please ensure:\n' +
             '• The backend services are running\n' +
             '• Your internet connection is stable\n' +
@@ -214,63 +215,28 @@ export async function registerSchool(
         
         // CORS error
         if (error.code === 'ERR_CORS') {
-          throw new SchoolRegistrationError(
+          throw new UserRegistrationError(
             'Cross-origin request blocked. Please contact support if this issue persists.',
             0
           );
         }
         
         // Generic network error
-        throw new SchoolRegistrationError(
+        throw new UserRegistrationError(
           'Network error. Please check your connection and try again.',
           0
         );
       }
-
-      // Handle 500 - Internal server error
-      if (statusCode === 500) {
-        const message = typeof errorData?.detail === 'string'
-          ? errorData.detail
-          : 'Server error. Our team has been notified. Please try again later.';
-        throw new SchoolRegistrationError(message, statusCode);
-      }
-      
-      // Handle 502 - Bad Gateway
-      if (statusCode === 502) {
-        throw new SchoolRegistrationError(
-          'Service temporarily unavailable. Please try again in a few moments.',
-          statusCode
-        );
-      }
-      
-      // Handle 503 - Service Unavailable
-      if (statusCode === 503) {
-        throw new SchoolRegistrationError(
-          'Service is currently unavailable. Please try again later.',
-          statusCode
-        );
-      }
-      
-      // Handle 504 - Gateway Timeout
-      if (statusCode === 504) {
-        throw new SchoolRegistrationError(
-          'Request timed out. Please check your connection and try again.',
-          statusCode
-        );
-      }
-      
-      // Handle network errors (no response received)
-     
       
       // Generic axios error with response
       const message = error.response?.data?.detail 
         ? String(error.response.data.detail)
         : error.message || 'An unexpected error occurred';
-      throw new SchoolRegistrationError(message, statusCode);
+      throw new UserRegistrationError(message, statusCode);
     }
     
-    // Handle SchoolRegistrationError (re-throw as-is)
-    if (error instanceof SchoolRegistrationError) {
+    // Handle UserRegistrationError (re-throw as-is)
+    if (error instanceof UserRegistrationError) {
       throw error;
     }
     
@@ -280,9 +246,9 @@ export async function registerSchool(
       : 'An unexpected error occurred. Please try again.';
     
     // Log unexpected errors for debugging
-    console.error('Unexpected error during school registration:', error);
+    console.error('Unexpected error during user registration:', error);
     
-    throw new SchoolRegistrationError(errorMessage, 500);
+    throw new UserRegistrationError(errorMessage, 500);
   }
 }
 
@@ -293,9 +259,11 @@ export async function registerSchool(
 function mapBackendFieldToFrontend(backendField: string): string {
   const fieldMap: Record<string, string> = {
     // Add mappings if backend uses different field names
-    // Example: 'school_name' -> 'name'
+    // Example: 'first_name' -> 'first_name' (already matches)
   };
   
   return fieldMap[backendField] || backendField;
 }
+
+
 

@@ -17,14 +17,19 @@ Create the API endpoint for school registration with validation, error handling,
 
 ## Acceptance Criteria
 
-1. [x] POST `/api/v1/schools/register` endpoint exists
-2. [x] Endpoint accepts school registration data
+1. [x] POST `/api/v1/schools/register` endpoint exists (combined school + admin)
+2. [x] Endpoint accepts school registration data with admin user details
 3. [x] Input validation works (required fields, formats)
 4. [x] School code uniqueness is validated
-5. [x] Successful registration returns 201 with school data
-6. [x] Validation errors return 422 with clear messages
-7. [x] Duplicate code returns 409 with specific error
-8. [x] API endpoint is documented (OpenAPI)
+5. [x] Admin email uniqueness is validated
+6. [x] Password strength validation (backend and frontend)
+7. [x] Successful registration returns 201 with both school and admin data
+8. [x] Validation errors return 422 with clear field-level messages
+9. [x] Duplicate code or email returns 409 with specific error
+10. [x] Atomic transaction: both school and admin created together or neither
+11. [x] Transaction rollback if admin creation fails
+12. [x] Response validation before commit (prevents inconsistent state)
+13. [x] API endpoint is documented (OpenAPI)
 
 ## Technical Details
 
@@ -32,8 +37,12 @@ Create the API endpoint for school registration with validation, error handling,
 
 ```
 backend/school_service/api/routes/schools.py
-backend/shared/schemas/school.py
-backend/school_service/services/school_service.py
+backend/shared/schemas/school.py (SchoolRegistrationWithAdmin, SchoolRegistrationResponse)
+backend/shared/schemas/user.py (UserCreate, UserResponse)
+backend/school_service/services/school_service.py (create_school_with_admin)
+backend/school_service/services/user_service.py (create_user_without_commit)
+backend/school_service/repositories/school_repository.py (create_without_commit)
+backend/school_service/repositories/user_repository.py (create_user_without_commit)
 ```
 
 ### Key Code Patterns
@@ -73,8 +82,10 @@ async def register_school(school_data: SchoolCreate):
 ### Dependencies
 
 - Task 001 (School model must exist)
+- Task 004 (User model must exist)
 - FastAPI installed
 - Pydantic for validation
+- SQLAlchemy async for transaction management
 
 ## Visual Testing
 
@@ -89,11 +100,15 @@ async def register_school(school_data: SchoolCreate):
 
 ### Testing Steps
 
-1. Test with valid data: POST valid school data, verify 201 response
+1. Test with valid data: POST valid school + admin data, verify 201 response with both
 2. Test required fields: POST without name, verify 422 error
 3. Test duplicate code: POST with existing code, verify 409 error
-4. Test email validation: POST with invalid email, verify 422 error
-5. Check OpenAPI docs: Verify endpoint appears in `/docs`
+4. Test duplicate email: POST with existing admin email, verify 409 error
+5. Test transaction rollback: POST with valid school but invalid admin (duplicate email), verify no school created
+6. Test response validation: Verify response can be prepared before commit
+7. Test email validation: POST with invalid email, verify 422 error
+8. Test password validation: POST with weak password, verify 422 error
+9. Check OpenAPI docs: Verify endpoint appears in `/docs`
 
 ## Definition of Done
 
@@ -112,7 +127,11 @@ async def register_school(school_data: SchoolCreate):
 ## Notes
 
 - Use HTTP status codes correctly (201 for creation, 409 for conflict)
-- Error messages should be user-friendly
+- Error messages should be user-friendly with field-level mapping
 - Consider rate limiting for registration endpoint
 - Log registration attempts for security
+- **CRITICAL**: Never commit database changes if response preparation will fail
+- Use atomic transactions: both school and admin created together or neither
+- Validate response schemas before committing transaction
+- Implement proper rollback on any error (validation, user creation, response prep)
 

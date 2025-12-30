@@ -20,7 +20,8 @@ class UserCreate(UserBase):
     password: str = Field(
         ...,
         min_length=8,
-        description="User password (must be at least 8 characters with uppercase, lowercase, digit, and special character)"
+        max_length=72,
+        description="User password (must be at least 8 characters and no more than 72 bytes with uppercase, lowercase, digit, and special character)"
     )
     school_id: int = Field(..., description="ID of the school this user belongs to")
 
@@ -30,6 +31,11 @@ class UserCreate(UserBase):
         """Validate password strength."""
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
+        
+        # Check byte length (bcrypt has a 72-byte limit)
+        password_bytes = v.encode('utf-8')
+        if len(password_bytes) > 72:
+            raise ValueError("Password cannot be longer than 72 bytes. Please use a shorter password.")
         
         if not any(c.isupper() for c in v):
             raise ValueError("Password must contain at least one uppercase letter")

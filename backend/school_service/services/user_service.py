@@ -62,6 +62,50 @@ class UserService:
         user = await self.user_repo.create_user(user_dict)
         return user
 
+    async def create_user_without_commit(self, user_data: UserCreate) -> User:
+        """
+        Create a new user with password hashing, without committing.
+        
+        Useful for transactions where you want to commit multiple operations together.
+        Caller is responsible for committing the transaction.
+        
+        Args:
+            user_data: UserCreate schema with user data
+
+        Returns:
+            Created User instance (not yet committed)
+
+        Raises:
+            ValueError: If email already exists or validation fails
+        """
+        # Check if email already exists
+        if await self.user_repo.check_email_exists(user_data.email):
+            raise ValueError(f"Admin: Email '{user_data.email}' is already registered")
+
+        # Validate password strength (schema also validates, but double-check)
+        is_valid, error_msg = validate_password_strength(user_data.password)
+        if not is_valid:
+            raise ValueError(f"Admin: {error_msg}")
+
+        # Hash password
+        hashed_password = hash_password(user_data.password)
+
+        # Create user data dict
+        user_dict = {
+            "email": user_data.email.lower(),  # Normalize email to lowercase
+            "hashed_password": hashed_password,
+            "first_name": user_data.first_name,
+            "last_name": user_data.last_name,
+            "role": user_data.role,
+            "school_id": user_data.school_id,
+            "is_active": True,
+            "is_deleted": False,
+        }
+
+        # Create user without committing
+        user = await self.user_repo.create_user_without_commit(user_dict)
+        return user
+
     async def authenticate_user(self, email: str, password: str) -> User | None:
         """
         Authenticate a user by email and password.

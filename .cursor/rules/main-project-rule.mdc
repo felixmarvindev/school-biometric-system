@@ -200,6 +200,71 @@ async def enroll_student_bulk(student_ids: List[int], device_id: int):
     return results
 ```
 
+#### Database Transaction Management
+
+**CRITICAL: Never commit database changes if an error will be thrown later**
+
+**The Problem:**
+If you commit database changes and then encounter an error during response preparation, validation, or any subsequent operation, you create an inconsistent state:
+- Database has the data (committed)
+- API returns an error to the user
+- User sees an error but data exists in the database
+- Retrying the operation may fail with "duplicate" errors
+
+**The Solution:**
+1. **Validate everything BEFORE committing** - including response preparation
+2. **Use transactions properly** - wrap related operations in try/except with rollback
+3. **Commit only after all validations pass** - including response schema validation
+
+**Correct Pattern:**
+```python
+async def create_school_with_admin(
+    self, school_data: SchoolCreate, admin_data: UserCreate
+) -> tuple[School, User]:
+    """Create school and admin in a transaction."""
+    try:
+        # 1. Create objects (flush to get IDs, but don't commit)
+        school = await self.repository.create_without_commit(school_data)
+        admin_user = await self.user_service.create_user_without_commit(admin_data)
+        
+        # 2. Validate response can be prepared BEFORE committing
+        # This ensures if response preparation would fail, we can rollback
+        SchoolResponse.model_validate(school)
+        UserResponse.model_validate(admin_user)
+        
+        # 3. Only commit if everything validated successfully
+        await self.db.commit()
+        
+        # 4. Refresh objects to get final state
+        await self.db.refresh(school)
+        await self.db.refresh(admin_user)
+        
+        return school, admin_user
+    except Exception:
+        # Rollback on any error (validation, response prep, etc.)
+        await self.db.rollback()
+        raise
+```
+
+**Incorrect Pattern (DO NOT DO THIS):**
+```python
+# ❌ BAD: Commits before validating response
+async def create_school_with_admin(...):
+    school = await self.repository.create(school_data)  # Commits immediately
+    admin_user = await self.user_service.create_user(admin_data)  # Commits immediately
+    
+    # If this fails, data is already in database but user sees error
+    response = SchoolRegistrationResponse(...)  # Could fail here!
+    return response
+```
+
+**Key Principles:**
+- **Validate → Commit → Return** (not Commit → Validate → Return)
+- Use `create_without_commit()` methods for transactional operations
+- Always wrap transactional operations in try/except with rollback
+- Validate response schemas before committing
+- Only commit when you're certain the entire operation will succeed
+
 ### TypeScript (Frontend)
 
 #### Code Style

@@ -26,25 +26,28 @@ The School Setup story is the foundation of the entire system. Without schools r
 2. Sees a clean, professional registration form
 3. Reads the welcome message explaining the system
 
-### Step 2: School Registration
+### Step 2: School Registration (Step 1 of 2)
 1. Fills in school details:
-   - School name
-   - School code (unique identifier)
-   - Address
-   - Contact information (phone, email)
-2. Submits the form
-3. Sees a success message confirming registration
-4. Receives a confirmation email (future phase)
+   - School name (required)
+   - School code (required, unique identifier)
+   - Address (optional)
+   - Contact information - phone and email (optional)
+2. Clicks "Next: Admin Account" button
+3. Form validates required fields before proceeding
 
-### Step 3: Admin Account Creation
-1. System prompts for admin user details:
-   - Full name
-   - Email address
-   - Password (with strength requirements)
-   - Confirm password
-2. Submits admin account details
-3. Sees success message
-4. Receives welcome email with login credentials
+### Step 3: Admin Account Creation (Step 2 of 2)
+1. System shows admin account creation form:
+   - First name (required)
+   - Last name (required)
+   - Email address (required)
+   - Password (with strength requirements and indicator)
+   - Confirm password (required)
+2. Password strength indicator updates in real-time
+3. Can toggle password visibility
+4. Clicks "Complete Registration" button
+5. Both school and admin account are created in a single atomic transaction
+6. Sees success screen with school name and admin email
+7. Automatically redirected to login page after 3 seconds
 
 ### Step 4: First Login
 1. Navigates to login page

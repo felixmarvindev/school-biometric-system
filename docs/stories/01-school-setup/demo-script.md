@@ -36,83 +36,94 @@
 
 ---
 
-### Part 1: School Registration (1.5 minutes)
+### Part 1: School Registration - Step 1 (1 minute)
 
 #### Show Registration Form (30 seconds)
 
 **Script**:
-> "This is our school registration form. Schools provide their basic information here. Notice the school code - this is a unique identifier for each school, like a registration number."
+> "This is our school registration form. It's a two-step process. First, schools provide their basic information. Notice the school code - this is a unique identifier for each school, like a registration number. You can see the progress indicator at the top showing we're on Step 1 of 2."
 
 **Actions**:
+- Point out progress indicator (Step 1: School Info)
 - Point out each field
 - Explain school code uniqueness
-- Show form layout
+- Show form layout with required vs optional sections
 
 **Highlights**:
-- Clean, professional design
-- Clear field labels
-- Required field indicators
+- Clean, professional design with gradient background
+- Two-step progress indicator
+- Clear field labels with placeholders
+- Required field indicators (red asterisk)
 
-#### Fill and Submit Form (1 minute)
+#### Fill School Information (30 seconds)
 
 **Script**:
-> "Let me register a sample school. I'll enter Greenfield Academy with code GFA-001. Notice how the form validates as I type - the email format, phone number format. Once I've filled everything, I click Register."
+> "Let me fill in the school information. I'll enter Greenfield Academy with code GFA-001. Notice how the form validates as I type. The school code automatically converts to uppercase. Once I've filled the required fields, I click 'Next: Admin Account'."
 
 **Actions**:
-1. Start filling form slowly
-2. Show email validation (type invalid email, show error)
-3. Fill all fields with sample data
-4. Click "Register"
-5. Show loading state
-6. Show success message
+1. Fill school name
+2. Fill school code (show auto-uppercase conversion)
+3. Optionally fill address, phone, email
+4. Click "Next: Admin Account"
+5. Show progress indicator moving to Step 2
 
 **Highlights**:
 - Real-time validation
-- Loading feedback
-- Success confirmation
+- Auto-uppercase for school code
+- Smooth transition to Step 2
 
 **Key Talking Point**:
-> "Registration completes in under 2 seconds. The school is now in our system."
+> "The form validates required fields before allowing you to proceed to the next step."
 
 ---
 
-### Part 2: Admin Account Creation (1.5 minutes)
+### Part 2: Admin Account Creation - Step 2 (1.5 minutes)
 
 #### Show Admin Form (30 seconds)
 
 **Script**:
-> "After school registration, we create the admin account. This is the account that will manage the school's data. Notice the password strength indicator - we want strong passwords for security."
+> "Now we're on Step 2 - creating the admin account. This is the account that will manage the school's data. Notice the step header changed, and we can see we're on Step 2 of 2. The password strength indicator will help ensure we create a secure password."
 
 **Actions**:
-- Show admin account form
+- Show Step 2 header with user icon
+- Show progress indicator (both steps, Step 2 active)
 - Point out password requirements
-- Show password strength indicator
+- Show password strength indicator area
 
 **Highlights**:
+- Step header with icon and description
+- Progress indicator shows both steps
 - Password requirements visible
-- Strength indicator
-- Security-focused design
+- "Back" button to return to Step 1
 
 #### Create Admin Account (1 minute)
 
 **Script**:
-> "I'll create an admin account for John Doe. As I type the password, watch the strength indicator update. When passwords match, the form is ready. Let me submit."
+> "I'll create an admin account for John Doe. As I type the password, watch the strength indicator update in real-time. The indicator shows Weak, Fair, Good, Strong, or Very Strong. When passwords match, the form is ready. Let me submit - this will create both the school and admin account together in a single transaction."
 
 **Actions**:
-1. Fill name and email
-2. Type password slowly, show strength indicator
-3. Type password confirmation
-4. Show password match validation
-5. Click "Create Account"
-6. Show success message
+1. Fill first name and last name
+2. Fill email
+3. Type password slowly, show strength indicator updating
+4. Toggle password visibility (eye icon)
+5. Type password confirmation
+6. Show password match validation
+7. Click "Complete Registration"
+8. Show loading state with spinner
+9. Show success screen with both school name and admin email
+10. Show automatic redirect countdown
 
 **Highlights**:
-- Password strength feedback
+- Password strength feedback with animated progress bar
+- Password visibility toggle
 - Password matching validation
 - Secure account creation
+- Success screen shows both school and admin info
+- Automatic redirect to login
 
-**Key Talking Point**:
-> "Passwords are securely hashed before storage - we never see or store plain text passwords."
+**Key Talking Points**:
+> "Passwords are securely hashed before storage - we never see or store plain text passwords."  
+> "Both the school and admin account are created together in a single atomic transaction. If anything fails, nothing is saved - ensuring data consistency."
 
 ---
 
@@ -207,7 +218,7 @@
 ## Expected Questions & Answers
 
 ### Q: How long does registration take?
-**A**: The entire process takes about 2-3 minutes. Most of that is the admin filling out forms. The actual system processing is under 2 seconds.
+**A**: The entire two-step process takes about 2-3 minutes. Most of that is the admin filling out forms. The actual system processing (creating both school and admin) is under 2 seconds and happens in a single atomic transaction.
 
 ### Q: Can a school have multiple admins?
 **A**: Currently, each school has one primary admin. Multi-admin support is planned for a future release. For now, the admin can share credentials if needed, though we'd recommend waiting for proper multi-user support.
@@ -257,6 +268,8 @@
 - Verify backend services are running
 - Check database connection
 - Show error message and explain it's handled gracefully
+- **Important**: If admin creation fails, the school is automatically rolled back (transaction ensures both succeed or neither)
+- Field-level errors will show which specific field has the problem
 
 ### If login doesn't work:
 - Verify user was created in database
