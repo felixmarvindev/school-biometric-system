@@ -23,6 +23,8 @@ class School(Base):
 
     # Relationships
     users = relationship("User", back_populates="school", lazy="selectin")
+    classes = relationship("AcademicClass", back_populates="school", lazy="selectin")
+    students = relationship("Student", back_populates="school", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<School(id={self.id}, name='{self.name}', code='{self.code}')>"

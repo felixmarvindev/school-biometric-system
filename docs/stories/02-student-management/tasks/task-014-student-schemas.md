@@ -17,14 +17,14 @@ Create Pydantic schemas for student data validation, request/response models, an
 
 ## Acceptance Criteria
 
-1. [ ] StudentBase schema exists with common fields
-2. [ ] StudentCreate schema exists for creation
-3. [ ] StudentUpdate schema exists for updates
-4. [ ] StudentResponse schema exists for API responses
-5. [ ] ClassBase, ClassCreate, ClassResponse schemas exist
-6. [ ] StreamBase, StreamCreate, StreamResponse schemas exist
-7. [ ] All schemas have proper validation
-8. [ ] Schemas exclude sensitive/internal fields from responses
+1. [x] StudentBase schema exists with common fields
+2. [x] StudentCreate schema exists for creation
+3. [x] StudentUpdate schema exists for updates
+4. [x] StudentResponse schema exists for API responses
+5. [x] ClassBase, ClassCreate, ClassResponse schemas exist
+6. [x] StreamBase, StreamCreate, StreamResponse schemas exist
+7. [x] All schemas have proper validation
+8. [x] Schemas exclude sensitive/internal fields from responses
 
 ## Technical Details
 
@@ -118,11 +118,11 @@ class StudentResponse(StudentBase):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] All schemas have proper validation
-- [ ] Schemas tested with valid/invalid data
-- [ ] Response schemas exclude internal fields
-- [ ] Code reviewed
+- [x] Code written and follows standards
+- [x] All schemas have proper validation
+- [x] Schemas tested with valid/invalid data (via model tests)
+- [x] Response schemas exclude internal fields
+- [x] Code reviewed
 
 ## Time Estimate
 

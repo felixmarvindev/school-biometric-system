@@ -16,6 +16,9 @@ sys.path.insert(0, str(backend_dir))
 from shared.database.base import Base
 from school_service.models.school import School  # noqa: F401
 from school_service.models.user import User  # noqa: F401
+from school_service.models.student import Student  # noqa: F401
+from school_service.models.academic_class import AcademicClass  # noqa: F401
+from school_service.models.stream import Stream  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config
