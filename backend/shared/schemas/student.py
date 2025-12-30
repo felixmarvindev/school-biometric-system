@@ -35,7 +35,7 @@ class StudentBase(BaseModel):
 class StudentCreate(StudentBase):
     """Schema for creating a new student."""
 
-    school_id: int = Field(..., description="ID of the school")
+    school_id: Optional[int] = Field(None, description="ID of the school (auto-assigned from authenticated user)")
     class_id: Optional[int] = Field(None, description="ID of the class (optional)")
     stream_id: Optional[int] = Field(None, description="ID of the stream (optional)")
 
@@ -64,6 +64,19 @@ class StudentResponse(StudentBase):
     is_deleted: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class PaginatedStudentResponse(BaseModel):
+    """Paginated response for student list."""
+
+    items: list[StudentResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
     class Config:
         from_attributes = True
