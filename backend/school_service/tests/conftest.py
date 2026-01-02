@@ -27,6 +27,7 @@ from shared.database.base import Base
 # Import all models to ensure they're registered with SQLAlchemy
 from school_service.models import School, User, Student, AcademicClass, Stream  # noqa: F401
 from device_service.models.device import Device  # noqa: F401
+from device_service.models.device_group import DeviceGroup  # noqa: F401
 
 # Enable debug mode for tests to see actual errors
 settings.DEBUG = True

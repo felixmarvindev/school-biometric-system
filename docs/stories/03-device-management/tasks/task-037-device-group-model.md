@@ -17,14 +17,14 @@ Create the DeviceGroup database model to organize devices into logical groups (e
 
 ## Acceptance Criteria
 
-1. [ ] DeviceGroup model exists with all required fields
-2. [ ] Database migration creates `device_groups` table correctly
-3. [ ] Group name has unique constraint per school
-4. [ ] Model includes timestamps (created_at, updated_at)
-5. [ ] Model includes soft delete support (is_deleted)
-6. [ ] Foreign key to schools table
-7. [ ] Relationship with devices table (one-to-many)
-8. [ ] Migration runs successfully without errors
+1. [x] DeviceGroup model exists with all required fields
+2. [x] Database migration creates `device_groups` table correctly
+3. [x] Group name has unique constraint per school
+4. [x] Model includes timestamps (created_at, updated_at)
+5. [x] Model includes soft delete support (is_deleted)
+6. [x] Foreign key to schools table
+7. [x] Relationship with devices table (one-to-many)
+8. [x] Migration runs successfully without errors
 
 ## Technical Details
 
@@ -101,14 +101,14 @@ class DeviceGroup(Base):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Migration script created and tested
-- [ ] Model relationships verified
-- [ ] Unique constraints tested
-- [ ] Foreign keys tested
-- [ ] Device model updated with device_group_id foreign key
-- [ ] Comprehensive tests written and passing
-- [ ] Migration applied to test database
+- [x] Code written and follows standards
+- [x] Migration script created and tested
+- [x] Model relationships verified
+- [x] Unique constraints tested
+- [x] Foreign keys tested
+- [x] Device model updated with device_group_id foreign key
+- [x] Comprehensive tests written and passing
+- [x] Migration applied to test database
 
 ## Time Estimate
 

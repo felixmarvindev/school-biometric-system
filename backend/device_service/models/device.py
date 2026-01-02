@@ -76,9 +76,8 @@ class Device(Base):
     max_users = Column(Integer, nullable=True)  # Max capacity from device
     enrolled_users = Column(Integer, server_default=text("0"), nullable=False)  # Current enrollment count
 
-    # Group assignment (optional - Phase 2)
-    # TODO: Add ForeignKey("device_groups.id") when device_groups table is created in Phase 2
-    device_group_id = Column(Integer, nullable=True, index=True)
+    # Group assignment (optional)
+    device_group_id = Column(Integer, ForeignKey("device_groups.id"), nullable=True, index=True)
 
     # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -87,8 +86,7 @@ class Device(Base):
 
     # Relationships
     school = relationship("School", back_populates="devices", lazy="selectin")
-    # device_group relationship will be added in Phase 2
-    # device_group = relationship("DeviceGroup", back_populates="devices", lazy="selectin")
+    device_group = relationship("DeviceGroup", back_populates="devices", lazy="selectin")
 
     # Unique constraint: IP/port combination must be unique per school
     # Serial number is globally unique (if provided)

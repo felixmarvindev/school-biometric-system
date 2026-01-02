@@ -17,12 +17,12 @@ Create Pydantic schemas for device group data validation, request/response model
 
 ## Acceptance Criteria
 
-1. [ ] DeviceGroupCreate schema exists with validation
-2. [ ] DeviceGroupUpdate schema exists (all fields optional)
-3. [ ] DeviceGroupResponse schema exists with all fields
-4. [ ] DeviceGroupListResponse schema exists with pagination
-5. [ ] Name validation (min length, max length)
-6. [ ] All schemas documented with descriptions
+1. [x] DeviceGroupCreate schema exists with validation
+2. [x] DeviceGroupUpdate schema exists (all fields optional)
+3. [x] DeviceGroupResponse schema exists with all fields
+4. [x] DeviceGroupListResponse schema exists with pagination
+5. [x] Name validation (min length, max length)
+6. [x] All schemas documented with descriptions
 
 ## Technical Details
 
@@ -98,12 +98,12 @@ class DeviceGroupListResponse(BaseModel):
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] All validations tested
-- [ ] Schemas documented with descriptions
-- [ ] Pydantic v2 patterns used
-- [ ] Tests written and passing
-- [ ] API documentation shows schemas correctly
+- [x] Code written and follows standards
+- [x] All validations tested
+- [x] Schemas documented with descriptions
+- [x] Pydantic v2 patterns used
+- [x] Tests written and passing
+- [x] API documentation shows schemas correctly
 
 ## Time Estimate
 

@@ -26,6 +26,7 @@ class School(Base):
     classes = relationship("AcademicClass", back_populates="school", lazy="selectin")
     students = relationship("Student", back_populates="school", lazy="selectin")
     devices = relationship("Device", back_populates="school", lazy="selectin")
+    device_groups = relationship("DeviceGroup", back_populates="school", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<School(id={self.id}, name='{self.name}', code='{self.code}')>"

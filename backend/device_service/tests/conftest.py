@@ -28,6 +28,7 @@ from school_service.models.student import Student
 from school_service.models.academic_class import AcademicClass
 from school_service.models.stream import Stream
 from device_service.models.device import Device
+from device_service.models.device_group import DeviceGroup
 
 # Test database URL (use in-memory SQLite for fast tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
