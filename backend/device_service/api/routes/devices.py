@@ -15,6 +15,7 @@ from shared.schemas.device import (
     DeviceListResponse,
     DeviceConnectionTest,
     DeviceConnectionTestResponse,
+    DeviceConnectionTestByAddress,
 )
 from shared.schemas.user import UserResponse
 from device_service.models.device import DeviceStatus
@@ -371,6 +372,64 @@ async def test_device_connection(
             status=DeviceStatus.OFFLINE,
         )
         
+        return DeviceConnectionTestResponse(
+            success=False,
+            message=f"Connection failed: {str(e)}",
+        )
+
+
+@router.post(
+    "/test-connection",
+    response_model=DeviceConnectionTestResponse,
+    summary="Test device connection by IP address",
+    description="""
+    Test connectivity to a device by IP address and port (before device creation).
+    
+    This endpoint allows testing device connectivity without requiring a device to be
+    registered in the system. Useful for validating connection settings before creating a device.
+    
+    Attempts to establish a TCP connection to the specified IP and port.
+    """,
+    responses={
+        200: {"description": "Connection test completed"},
+        422: {"description": "Validation error"},
+    },
+)
+async def test_connection_by_address(
+    test_data: DeviceConnectionTestByAddress,
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Test device connection by IP address and port.
+    
+    - **Authentication**: Required (JWT token)
+    - **Use case**: Test connection before creating a device
+    """
+    import asyncio
+    from datetime import datetime
+    
+    try:
+        # Attempt TCP connection (basic connectivity test)
+        start_time = datetime.utcnow()
+        
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(test_data.ip_address, test_data.port),
+            timeout=test_data.timeout
+        )
+        writer.close()
+        await writer.wait_closed()
+        
+        # Connection successful
+        end_time = datetime.utcnow()
+        response_time_ms = int((end_time - start_time).total_seconds() * 1000)
+        
+        return DeviceConnectionTestResponse(
+            success=True,
+            message="Connection successful",
+            response_time_ms=response_time_ms,
+        )
+    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
+        # Connection failed
         return DeviceConnectionTestResponse(
             success=False,
             message=f"Connection failed: {str(e)}",

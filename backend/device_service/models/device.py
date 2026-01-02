@@ -55,6 +55,7 @@ class Device(Base):
     name = Column(String(200), nullable=False)
     ip_address = Column(String(45), nullable=False)  # IPv4 or IPv6
     port = Column(Integer, nullable=False, server_default=text("4370"))  # Default ZKTeco port
+    com_password = Column(String(20), nullable=True)  # Communication password for device authentication
     serial_number = Column(String(100), unique=True, nullable=True, index=True)
     location = Column(String(200), nullable=True)
     description = Column(Text, nullable=True)

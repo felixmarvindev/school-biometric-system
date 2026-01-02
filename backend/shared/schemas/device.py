@@ -20,6 +20,7 @@ class DeviceBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="Device display name")
     ip_address: str = Field(..., description="Device IP address (IPv4 or IPv6)")
     port: int = Field(default=4370, ge=1, le=65535, description="Device port (default: 4370)")
+    com_password: Optional[str] = Field(None, max_length=20, description="Communication password for device authentication")
     serial_number: Optional[str] = Field(None, max_length=100, description="Device serial number")
     location: Optional[str] = Field(None, max_length=200, description="Device location")
     description: Optional[str] = Field(None, description="Device description")
@@ -47,6 +48,7 @@ class DeviceUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     ip_address: Optional[str] = None
     port: Optional[int] = Field(None, ge=1, le=65535)
+    com_password: Optional[str] = Field(None, max_length=20, description="Communication password for device authentication")
     serial_number: Optional[str] = Field(None, max_length=100)
     location: Optional[str] = Field(None, max_length=200)
     description: Optional[str] = None
@@ -99,6 +101,27 @@ class DeviceConnectionTest(BaseModel):
     timeout: Optional[int] = Field(
         default=5, ge=1, le=30, description="Connection timeout in seconds"
     )
+
+
+class DeviceConnectionTestByAddress(BaseModel):
+    """Schema for connection test by IP address and port (before device creation)."""
+
+    ip_address: str = Field(..., description="Device IP address (IPv4 or IPv6)")
+    port: int = Field(..., ge=1, le=65535, description="Device port")
+    com_password: Optional[str] = Field(None, max_length=20, description="Communication password (optional)")
+    timeout: Optional[int] = Field(
+        default=5, ge=1, le=30, description="Connection timeout in seconds"
+    )
+
+    @field_validator("ip_address")
+    @classmethod
+    def validate_ip_address(cls, v: str) -> str:
+        """Validate IP address format."""
+        try:
+            IPvAnyAddress(v)
+            return v
+        except Exception:
+            raise ValueError("Invalid IP address format")
 
 
 class DeviceConnectionTestResponse(BaseModel):

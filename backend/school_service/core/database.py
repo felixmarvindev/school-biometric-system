@@ -3,6 +3,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from school_service.core.config import settings
 
+# Import all models to ensure they're registered with SQLAlchemy
+# This is necessary for relationships to work across services
+from school_service.models import School, User, Student, AcademicClass, Stream  # noqa: F401
+from device_service.models.device import Device  # noqa: F401
+
 # Create async engine
 engine = create_async_engine(
     settings.DATABASE_URL,

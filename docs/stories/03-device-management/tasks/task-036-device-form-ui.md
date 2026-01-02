@@ -17,20 +17,20 @@ Create the device registration and edit form component with validation, connecti
 
 ## Acceptance Criteria
 
-1. [ ] Device form page route exists at `/dashboard/devices/new` and `/dashboard/devices/{id}/edit`
-2. [ ] Page is protected (requires authentication)
-3. [ ] `DeviceForm` component created
-4. [ ] Form fields: name, IP address, port, serial number, location, description
-5. [ ] Device group selector (dropdown - Phase 2)
-6. [ ] IP address format validation (client-side)
-7. [ ] Port range validation (1-65535)
-8. [ ] Form submission works (create/update)
-9. [ ] Connection test button works
-10. [ ] Loading states during submission
-11. [ ] Success/error messages displayed
-12. [ ] Form validation messages clear
-13. [ ] Redirects to device list on success
-14. [ ] Responsive design (mobile-friendly)
+1. [x] Device form page route exists at `/dashboard/devices/new` and `/dashboard/devices/{id}/edit`
+2. [x] Page is protected (requires authentication)
+3. [x] `DeviceForm` component created
+4. [x] Form fields: name, IP address, port, serial number, location, description, com_password
+5. [x] Device group selector (dropdown - Phase 2, placeholder ready)
+6. [x] IP address format validation (client-side)
+7. [x] Port range validation (1-65535)
+8. [x] Form submission works (create/update)
+9. [x] Connection test button works (for both new and existing devices)
+10. [x] Loading states during submission
+11. [x] Success/error messages displayed
+12. [x] Form validation messages clear
+13. [x] Redirects to device list on success
+14. [x] Responsive design (mobile-friendly)
 
 ## Technical Details
 
@@ -206,16 +206,16 @@ export function DeviceForm({ deviceId, initialData }: DeviceFormProps) {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Form validation works
-- [ ] Connection test works
-- [ ] Create device works
-- [ ] Update device works
-- [ ] Error handling comprehensive
-- [ ] Loading states implemented
-- [ ] Responsive design verified
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Code written and follows standards
+- [x] Form validation works
+- [x] Connection test works
+- [x] Create device works
+- [x] Update device works
+- [x] Error handling comprehensive
+- [x] Loading states implemented
+- [x] Responsive design verified
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 

@@ -6,6 +6,10 @@ from school_service.models.student import Student, Gender
 from school_service.models.academic_class import AcademicClass
 from school_service.models.stream import Stream
 
+# Import Device model to ensure it's registered with SQLAlchemy
+# when School model initializes its relationship
+from device_service.models.device import Device  # noqa: F401
+
 # Type alias for convenience (Class is a Python keyword, so model is named AcademicClass)
 Class = AcademicClass
 

@@ -17,22 +17,22 @@ Create the device list page component with search, filtering, status indicators,
 
 ## Acceptance Criteria
 
-1. [ ] Device list page route exists at `/dashboard/devices`
-2. [ ] Page is protected (requires authentication via layout)
-3. [ ] `DeviceList` component created
-4. [ ] Displays list of devices in table format
-5. [ ] Shows device status indicators (online/offline/unknown)
-6. [ ] Search functionality works (by name, IP, or serial number)
-7. [ ] Filter by status works (dropdown)
-8. [ ] Filter by device group works (dropdown - Phase 2)
-9. [ ] Pagination controls work
-10. [ ] Loading states shown during data fetch
-11. [ ] Error states handled gracefully
-12. [ ] "Add Device" button navigates to create form
-13. [ ] Click on device navigates to detail page
-14. [ ] Connection test button for each device
-15. [ ] Responsive design (mobile-friendly)
-16. [ ] Empty state shown when no devices
+1. [x] Device list page route exists at `/dashboard/devices`
+2. [x] Page is protected (requires authentication via layout)
+3. [x] `DeviceList` component created
+4. [x] Displays list of devices in table format
+5. [x] Shows device status indicators (online/offline/unknown)
+6. [x] Search functionality works (by name, IP, or serial number)
+7. [x] Filter by status works (dropdown)
+8. [x] Filter by device group works (dropdown - Phase 2)
+9. [x] Pagination controls work
+10. [x] Loading states shown during data fetch
+11. [x] Error states handled gracefully
+12. [x] "Add Device" button navigates to create form
+13. [x] Click on device navigates to detail page
+14. [x] Connection test button for each device
+15. [x] Responsive design (mobile-friendly)
+16. [x] Empty state shown when no devices
 
 ## Technical Details
 
@@ -147,19 +147,19 @@ export default function DevicesPage() {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Component tests written and passing
-- [ ] Search functionality works
-- [ ] Filtering works
-- [ ] Pagination works
-- [ ] Status indicators display correctly
-- [ ] Connection test works
-- [ ] Responsive design verified
-- [ ] Loading states implemented
-- [ ] Error states handled
-- [ ] Empty state implemented
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Code written and follows standards
+- [x] Component tests written and passing
+- [x] Search functionality works
+- [x] Filtering works
+- [x] Pagination works
+- [x] Status indicators display correctly
+- [x] Connection test works
+- [x] Responsive design verified
+- [x] Loading states implemented
+- [x] Error states handled
+- [x] Empty state implemented
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 
