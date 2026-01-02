@@ -17,16 +17,16 @@ Create CRUD API endpoints for device group management with validation and author
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/device-groups` endpoint exists (create)
-2. [ ] GET `/api/v1/device-groups` endpoint exists (list)
-3. [ ] GET `/api/v1/device-groups/{id}` endpoint exists (get)
-4. [ ] PATCH `/api/v1/device-groups/{id}` endpoint exists (update)
-5. [ ] DELETE `/api/v1/device-groups/{id}` endpoint exists (delete)
-6. [ ] All endpoints require authentication
-7. [ ] All operations scoped to user's school
-8. [ ] Name uniqueness validated per school
-9. [ ] Returns appropriate status codes
-10. [ ] All endpoints documented
+1. [x] POST `/api/v1/device-groups` endpoint exists (create)
+2. [x] GET `/api/v1/device-groups` endpoint exists (list)
+3. [x] GET `/api/v1/device-groups/{id}` endpoint exists (get)
+4. [x] PATCH `/api/v1/device-groups/{id}` endpoint exists (update)
+5. [x] DELETE `/api/v1/device-groups/{id}` endpoint exists (delete)
+6. [x] All endpoints require authentication
+7. [x] All operations scoped to user's school
+8. [x] Name uniqueness validated per school
+9. [x] Returns appropriate status codes
+10. [x] All endpoints documented
 
 ## Technical Details
 
@@ -231,14 +231,14 @@ async def delete_device_group(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] All CRUD endpoints implemented
-- [ ] Unit tests written and passing
-- [ ] Authorization verified
-- [ ] Uniqueness validation tested
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] All CRUD endpoints implemented
+- [x] Unit tests written and passing
+- [x] Authorization verified
+- [x] Uniqueness validation tested
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

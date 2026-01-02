@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from device_service.core.config import settings
-from device_service.api.routes import devices
+from device_service.api.routes import devices_router, device_groups_router
 
 app = FastAPI(
     title="School Biometric System - Device Service",
@@ -24,7 +24,8 @@ app = FastAPI(
 )
 
 # Include routers
-app.include_router(devices.router)
+app.include_router(devices_router)
+app.include_router(device_groups_router)
 
 # CORS middleware
 app.add_middleware(
