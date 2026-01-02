@@ -17,17 +17,17 @@ Create the API endpoint for registering new devices with validation, error handl
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/devices` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Endpoint validates all required fields
-4. [ ] IP address and port combination validated per school (unique)
-5. [ ] Serial number uniqueness validated (global)
-6. [ ] Device is associated with authenticated user's school
-7. [ ] Returns 201 with created device data
-8. [ ] Returns 422 for validation errors
-9. [ ] Returns 409 for duplicate IP/port or serial number
-10. [ ] Returns 401 if not authenticated
-11. [ ] API endpoint is documented
+1. [x] POST `/api/v1/devices` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Endpoint validates all required fields
+4. [x] IP address and port combination validated per school (unique)
+5. [x] Serial number uniqueness validated (global)
+6. [x] Device is associated with authenticated user's school
+7. [x] Returns 201 with created device data
+8. [x] Returns 422 for validation errors
+9. [x] Returns 409 for duplicate IP/port or serial number
+10. [x] Returns 401 if not authenticated
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -128,14 +128,14 @@ async def create_device(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Integration tests with authentication
-- [ ] Authorization verified (user can only create devices in their school)
-- [ ] API documented (OpenAPI/Swagger)
-- [ ] Error handling comprehensive
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Integration tests with authentication
+- [x] Authorization verified (user can only create devices in their school)
+- [x] API documented (OpenAPI/Swagger)
+- [x] Error handling comprehensive
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

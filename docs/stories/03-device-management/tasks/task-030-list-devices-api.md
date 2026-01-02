@@ -17,17 +17,17 @@ Create the API endpoint for listing devices with filtering, search, and paginati
 
 ## Acceptance Criteria
 
-1. [ ] GET `/api/v1/devices` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Returns only devices from authenticated user's school
-4. [ ] Supports pagination (page, page_size)
-5. [ ] Supports search by name, IP address, or serial number
-6. [ ] Supports filtering by status (online, offline, unknown)
-7. [ ] Supports filtering by device group (if provided)
-8. [ ] Returns paginated response with metadata
-9. [ ] Default page size is 50
-10. [ ] Returns 401 if not authenticated
-11. [ ] API endpoint is documented
+1. [x] GET `/api/v1/devices` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Returns only devices from authenticated user's school
+4. [x] Supports pagination (page, page_size)
+5. [x] Supports search by name, IP address, or serial number
+6. [x] Supports filtering by status (online, offline, unknown)
+7. [x] Supports filtering by device group (if provided)
+8. [x] Returns paginated response with metadata
+9. [x] Default page size is 50
+10. [x] Returns 401 if not authenticated
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -125,15 +125,15 @@ async def list_devices(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Pagination tested
-- [ ] Search functionality tested
-- [ ] Filtering tested
-- [ ] Authorization verified
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Pagination tested
+- [x] Search functionality tested
+- [x] Filtering tested
+- [x] Authorization verified
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

@@ -17,15 +17,15 @@ Create the API endpoint for soft-deleting devices with authorization checks.
 
 ## Acceptance Criteria
 
-1. [ ] DELETE `/api/v1/devices/{device_id}` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Only deletes devices from user's school
-4. [ ] Uses soft delete (sets is_deleted = true)
-5. [ ] Returns 204 No Content on success
-6. [ ] Returns 404 if device not found
-7. [ ] Returns 401 if not authenticated
-8. [ ] Soft-deleted devices excluded from list/get endpoints
-9. [ ] API endpoint is documented
+1. [x] DELETE `/api/v1/devices/{device_id}` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Only deletes devices from user's school
+4. [x] Uses soft delete (sets is_deleted = true)
+5. [x] Returns 204 No Content on success
+6. [x] Returns 404 if device not found
+7. [x] Returns 401 if not authenticated
+8. [x] Soft-deleted devices excluded from list/get endpoints
+9. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -117,14 +117,14 @@ async def delete_device(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Soft delete tested (is_deleted flag set)
-- [ ] Authorization verified
-- [ ] Excluded from list/get tested
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Soft delete tested (is_deleted flag set)
+- [x] Authorization verified
+- [x] Excluded from list/get tested
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

@@ -17,14 +17,14 @@ Create the API endpoint for retrieving a single device by ID with authorization.
 
 ## Acceptance Criteria
 
-1. [ ] GET `/api/v1/devices/{device_id}` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Returns device only if it belongs to user's school
-4. [ ] Returns 200 with device data if found
-5. [ ] Returns 404 if device not found
-6. [ ] Returns 403 if device belongs to different school
-7. [ ] Returns 401 if not authenticated
-8. [ ] API endpoint is documented
+1. [x] GET `/api/v1/devices/{device_id}` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Returns device only if it belongs to user's school
+4. [x] Returns 200 with device data if found
+5. [x] Returns 404 if device not found
+6. [x] Returns 403 if device belongs to different school
+7. [x] Returns 401 if not authenticated
+8. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -116,14 +116,14 @@ async def get_device(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Authorization verified (school-level access control)
-- [ ] 404 handling tested
-- [ ] 403 handling tested
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Authorization verified (school-level access control)
+- [x] 404 handling tested
+- [x] 403 handling tested
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 

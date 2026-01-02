@@ -17,17 +17,17 @@ Create the API endpoint for testing device connectivity and updating device stat
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/devices/{device_id}/test` endpoint exists
-2. [ ] Endpoint requires authentication (JWT token)
-3. [ ] Only tests devices from user's school
-4. [ ] Attempts TCP connection to device IP/port
-5. [ ] Returns connection test results (success/failure)
-6. [ ] Updates device status (online/offline) based on test
-7. [ ] Updates last_seen timestamp on success
-8. [ ] Returns device information if connection successful
-9. [ ] Supports timeout configuration
-10. [ ] Returns 401 if not authenticated
-11. [ ] API endpoint is documented
+1. [x] POST `/api/v1/devices/{device_id}/test` endpoint exists
+2. [x] Endpoint requires authentication (JWT token)
+3. [x] Only tests devices from user's school
+4. [x] Attempts TCP connection to device IP/port
+5. [x] Returns connection test results (success/failure)
+6. [x] Updates device status (online/offline) based on test
+7. [x] Updates last_seen timestamp on success
+8. [x] Returns device information if connection successful
+9. [x] Supports timeout configuration
+10. [x] Returns 401 if not authenticated
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -166,15 +166,15 @@ async def test_device_connection(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Connection test logic tested
-- [ ] Status update tested
-- [ ] Timeout handling tested
-- [ ] Authorization verified
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with real device (if available) or simulated
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Connection test logic tested
+- [x] Status update tested
+- [x] Timeout handling tested
+- [x] Authorization verified
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with real device (if available) or simulated
 
 ## Time Estimate
 

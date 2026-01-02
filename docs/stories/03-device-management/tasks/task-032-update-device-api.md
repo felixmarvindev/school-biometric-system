@@ -17,17 +17,17 @@ Create the API endpoint for updating device information with validation and auth
 
 ## Acceptance Criteria
 
-1. [ ] PUT `/api/v1/devices/{device_id}` endpoint exists
-2. [ ] PATCH `/api/v1/devices/{device_id}` endpoint exists (or just PATCH)
-3. [ ] Endpoint requires authentication (JWT token)
-4. [ ] Only updates devices from user's school
-5. [ ] Validates IP/port uniqueness if changed
-6. [ ] Validates serial number uniqueness if changed
-7. [ ] Returns 200 with updated device data
-8. [ ] Returns 404 if device not found
-9. [ ] Returns 409 for duplicate IP/port or serial number
-10. [ ] Returns 401 if not authenticated
-11. [ ] API endpoint is documented
+1. [x] PUT `/api/v1/devices/{device_id}` endpoint exists
+2. [x] PATCH `/api/v1/devices/{device_id}` endpoint exists (or just PATCH)
+3. [x] Endpoint requires authentication (JWT token)
+4. [x] Only updates devices from user's school
+5. [x] Validates IP/port uniqueness if changed
+6. [x] Validates serial number uniqueness if changed
+7. [x] Returns 200 with updated device data
+8. [x] Returns 404 if device not found
+9. [x] Returns 409 for duplicate IP/port or serial number
+10. [x] Returns 401 if not authenticated
+11. [x] API endpoint is documented
 
 ## Technical Details
 
@@ -136,14 +136,14 @@ async def update_device(
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Unit tests written and passing
-- [ ] Partial update tested
-- [ ] Uniqueness validation tested
-- [ ] Authorization verified
-- [ ] API documented
-- [ ] Code reviewed
-- [ ] Tested with Postman/curl
+- [x] Code written and follows standards
+- [x] Unit tests written and passing
+- [x] Partial update tested
+- [x] Uniqueness validation tested
+- [x] Authorization verified
+- [x] API documented
+- [x] Code reviewed
+- [x] Tested with Postman/curl
 
 ## Time Estimate
 
