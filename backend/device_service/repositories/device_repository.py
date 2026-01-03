@@ -1,5 +1,6 @@
 """Repository for Device data access."""
 
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
@@ -208,7 +209,7 @@ class DeviceRepository:
         self,
         device_id: int,
         status: DeviceStatus,
-        last_seen: Optional = None,
+        last_seen: Optional[datetime] = None,
     ) -> bool:
         """
         Update device status and last_seen timestamp.
@@ -227,8 +228,8 @@ class DeviceRepository:
             return False
         
         device.status = status
-        if last_seen is not None:
-            device.last_seen = last_seen
+        # Always update last_seen (allows clearing it with None)
+        device.last_seen = last_seen
         
         await self.db.commit()
         await self.db.refresh(device)

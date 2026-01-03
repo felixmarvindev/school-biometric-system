@@ -17,15 +17,15 @@ Create a background service that periodically checks device connectivity and upd
 
 ## Acceptance Criteria
 
-1. [ ] Health check service exists as background task
-2. [ ] Service checks all devices periodically (configurable interval)
-3. [ ] Updates device status (online/offline)
-4. [ ] Updates last_seen timestamp
-5. [ ] Handles connection timeouts gracefully
-6. [ ] Logs health check results
-7. [ ] Can be started/stopped
-8. [ ] Configurable check interval (default: 5 minutes)
-9. [ ] Respects simulation mode
+1. [x] Health check service exists as background task
+2. [x] Service checks all devices periodically (configurable interval)
+3. [x] Updates device status (online/offline)
+4. [x] Updates last_seen timestamp
+5. [x] Handles connection timeouts gracefully
+6. [x] Logs health check results
+7. [x] Can be started/stopped
+8. [x] Configurable check interval (default: 5 minutes)
+9. [x] Respects simulation mode
 
 ## Technical Details
 
@@ -174,16 +174,16 @@ class DeviceHealthCheckService:
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Health check service implemented
-- [ ] Periodic checking works
-- [ ] Status updates correctly
-- [ ] Handles errors gracefully
-- [ ] Logging implemented
-- [ ] Configurable interval works
-- [ ] Simulation mode support
-- [ ] Unit tests written and passing
-- [ ] Code reviewed
+- [x] Code written and follows standards
+- [x] Health check service implemented
+- [x] Periodic checking works
+- [x] Status updates correctly
+- [x] Handles errors gracefully
+- [x] Logging implemented
+- [x] Configurable interval works
+- [x] Simulation mode support
+- [x] Unit tests written and passing
+- [x] Code reviewed
 
 ## Time Estimate
 
