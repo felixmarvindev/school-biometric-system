@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useCallback, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,8 @@ import { fadeInUp, staggerContainer } from "@/lib/animations/framer-motion"
 import { DeviceTableRow } from "./DeviceTableRow"
 import { DeviceListFilters } from "./DeviceListFilters"
 import { DeviceListPagination } from "./DeviceListPagination"
+import { DeviceStatusIndicator } from "./DeviceStatusIndicator"
+import { useDeviceStatusWebSocket, type DeviceStatusUpdate } from "@/lib/hooks/useDeviceStatusWebSocket"
 import { type DeviceResponse, type DeviceStatus } from "@/lib/api/devices"
 
 export interface DeviceListProps {
@@ -60,6 +63,65 @@ export function DeviceList({
   const hasFilters = search || statusFilter || deviceGroupFilter
   const showEmptyState = !isLoading && devices.length === 0 && !hasFilters
   const showNoResults = !isLoading && devices.length === 0 && hasFilters
+
+  // Track device statuses and last_seen for real-time updates
+  const [deviceStatuses, setDeviceStatuses] = useState<Map<number, DeviceStatus>>(
+    new Map(devices.map((d) => [d.id, d.status]))
+  )
+  const [deviceLastSeen, setDeviceLastSeen] = useState<Map<number, string | null>>(
+    new Map(devices.map((d) => [d.id, d.last_seen]))
+  )
+
+  // Update local state when devices prop changes (e.g., after fetching)
+  // Only update if device doesn't exist in state (preserve real-time updates)
+  useEffect(() => {
+    setDeviceStatuses((prev) => {
+      const newMap = new Map(prev)
+      devices.forEach((device) => {
+        // Only add if not already present (preserve WebSocket updates)
+        if (!newMap.has(device.id)) {
+          newMap.set(device.id, device.status)
+        }
+      })
+      return newMap
+    })
+
+    setDeviceLastSeen((prev) => {
+      const newMap = new Map(prev)
+      devices.forEach((device) => {
+        // Only add if not already present (preserve WebSocket updates)
+        if (!newMap.has(device.id)) {
+          newMap.set(device.id, device.last_seen)
+        }
+      })
+      return newMap
+    })
+  }, [devices])
+
+  // Handle WebSocket status updates - use useCallback with empty deps to keep stable
+  const handleStatusUpdate = useCallback((update: DeviceStatusUpdate) => {
+    if (update.type === "device_status_update" && update.device_id !== undefined) {
+      setDeviceStatuses((prev) => {
+        const newMap = new Map(prev)
+        if (update.status) {
+          newMap.set(update.device_id!, update.status)
+        }
+        return newMap
+      })
+
+      setDeviceLastSeen((prev) => {
+        const newMap = new Map(prev)
+        newMap.set(update.device_id!, update.last_seen ?? null)
+        return newMap
+      })
+    }
+  }, [])
+
+  // Connect to WebSocket for real-time updates
+  const { isConnected, isConnecting, error: wsError } = useDeviceStatusWebSocket({
+    onStatusUpdate: handleStatusUpdate,
+    autoConnect: true,
+  })
 
   return (
     <div className="space-y-6">
@@ -233,6 +295,8 @@ export function DeviceList({
                       onDeviceClick={onDeviceClick}
                       onTestConnection={onTestConnection}
                       isTestingConnection={isTestingConnection}
+                      status={deviceStatuses.get(device.id)}
+                      lastSeen={deviceLastSeen.get(device.id)}
                     />
                   ))}
                 </TableBody>

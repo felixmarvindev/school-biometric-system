@@ -5,7 +5,7 @@ import { TableCell, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { DeviceStatusBadge } from "./DeviceStatusBadge"
 import { staggerItem } from "@/lib/animations/framer-motion"
-import { type DeviceResponse } from "@/lib/api/devices"
+import { type DeviceResponse, type DeviceStatus } from "@/lib/api/devices"
 import { Wifi, WifiOff, Clock } from "lucide-react"
 
 export interface DeviceTableRowProps {
@@ -13,6 +13,10 @@ export interface DeviceTableRowProps {
   onDeviceClick: (id: number) => void
   onTestConnection: (id: number) => void
   isTestingConnection?: boolean
+  /** Optional override for device status (for real-time updates) */
+  status?: DeviceStatus
+  /** Optional override for last_seen (for real-time updates) */
+  lastSeen?: string | null
 }
 
 /**
@@ -55,7 +59,13 @@ export function DeviceTableRow({
   onDeviceClick,
   onTestConnection,
   isTestingConnection = false,
+  status: statusOverride,
+  lastSeen: lastSeenOverride,
 }: DeviceTableRowProps) {
+  // Use override values if provided, otherwise fall back to device values
+  const currentStatus = statusOverride ?? device.status
+  const currentLastSeen = lastSeenOverride ?? device.last_seen
+
   return (
     <motion.tr
       variants={staggerItem}
@@ -72,7 +82,7 @@ export function DeviceTableRow({
         </div>
       </TableCell>
       <TableCell className="cursor-pointer" onClick={() => onDeviceClick(device.id)}>
-        <DeviceStatusBadge status={device.status} />
+        <DeviceStatusBadge status={currentStatus} />
       </TableCell>
       <TableCell className="text-muted-foreground cursor-pointer" onClick={() => onDeviceClick(device.id)}>
         {device.location || "—"}
@@ -80,7 +90,7 @@ export function DeviceTableRow({
       <TableCell className="text-muted-foreground cursor-pointer" onClick={() => onDeviceClick(device.id)}>
         <div className="flex items-center gap-2">
           <Clock className="h-3 w-3" />
-          {formatLastSeen(device.last_seen)}
+          {formatLastSeen(currentLastSeen)}
         </div>
       </TableCell>
       <TableCell className="cursor-pointer" onClick={() => onDeviceClick(device.id)}>
@@ -106,7 +116,7 @@ export function DeviceTableRow({
               <WifiOff className="mr-2 h-3 w-3 animate-spin" />
               Testing...
             </>
-          ) : device.status === "online" ? (
+          ) : currentStatus === "online" ? (
             <>
               <Wifi className="mr-2 h-3 w-3" />
               Test

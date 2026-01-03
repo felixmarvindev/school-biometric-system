@@ -10,13 +10,22 @@ backend_dir = Path(__file__).parent.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
+# Import settings first to check DEBUG flag
+from device_service.core.config import settings
+
+# Configure logging based on DEBUG setting
+log_level = logging.DEBUG if settings.DEBUG else logging.INFO
+logging.basicConfig(
+    level=log_level,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-
-from device_service.core.config import settings
 from device_service.core.database import AsyncSessionLocal
-from device_service.api.routes import devices_router, device_groups_router
+from device_service.api.routes import devices_router, device_groups_router, websocket_router
 from device_service.services.device_health_check import DeviceHealthCheckService
 
 logger = logging.getLogger(__name__)
@@ -67,6 +76,7 @@ app = FastAPI(
 # Include routers
 app.include_router(devices_router)
 app.include_router(device_groups_router)
+app.include_router(websocket_router)
 
 # CORS middleware
 app.add_middleware(
@@ -97,5 +107,5 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8002, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8002, reload=True, log_level="info")
 

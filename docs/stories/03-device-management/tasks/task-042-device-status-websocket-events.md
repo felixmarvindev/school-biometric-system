@@ -17,14 +17,14 @@ Implement WebSocket events to push real-time device status updates to connected 
 
 ## Acceptance Criteria
 
-1. [ ] WebSocket connection endpoint exists
-2. [ ] Clients can subscribe to device status updates
-3. [ ] Status updates broadcast when device status changes
-4. [ ] Events include device_id, status, last_seen
-5. [ ] Authentication required for WebSocket connection
-6. [ ] Only broadcasts devices from user's school
-7. [ ] Handles client disconnections gracefully
-8. [ ] WebSocket events documented
+1. [x] WebSocket connection endpoint exists
+2. [x] Clients can subscribe to device status updates
+3. [x] Status updates broadcast when device status changes
+4. [x] Events include device_id, status, last_seen
+5. [x] Authentication required for WebSocket connection
+6. [x] Only broadcasts devices from user's school
+7. [x] Handles client disconnections gracefully
+8. [x] WebSocket events documented
 
 ## Technical Details
 
@@ -144,14 +144,14 @@ async def broadcast_device_status(school_id: int, device_id: int, status: str, l
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] WebSocket endpoint implemented
-- [ ] Authentication works
-- [ ] Status updates broadcast correctly
-- [ ] School-level scoping verified
-- [ ] Disconnection handling tested
-- [ ] Unit tests written and passing
-- [ ] Code reviewed
+- [x] Code written and follows standards
+- [x] WebSocket endpoint implemented
+- [x] Authentication works
+- [x] Status updates broadcast correctly
+- [x] School-level scoping verified
+- [x] Disconnection handling tested
+- [x] Unit tests written and passing
+- [x] Code reviewed
 
 ## Time Estimate
 

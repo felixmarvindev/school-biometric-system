@@ -8,6 +8,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from device_service.models.device import Device, DeviceStatus
 from device_service.services.device_connection import DeviceConnectionService
+from device_service.services.device_status_broadcaster import broadcaster
 from device_service.repositories.device_repository import DeviceRepository
 from device_service.core.config import settings
 from device_service.core.database import AsyncSessionLocal
@@ -139,7 +140,7 @@ class DeviceHealthCheckService:
     
     async def update_device_status(self, device_id: int, is_online: bool, db: AsyncSession):
         """
-        Update device status and last_seen timestamp.
+        Update device status and last_seen timestamp, and broadcast update via WebSocket.
         
         Args:
             device_id: Device ID
@@ -148,6 +149,13 @@ class DeviceHealthCheckService:
         """
         try:
             repository = DeviceRepository(db)
+            
+            # Get device to retrieve school_id for broadcasting
+            device = await repository.get_by_id(device_id)
+            if not device:
+                logger.warning(f"Device {device_id} not found for status update")
+                return
+            
             status = DeviceStatus.ONLINE if is_online else DeviceStatus.OFFLINE
             last_seen = datetime.utcnow() if is_online else None
             
@@ -161,6 +169,19 @@ class DeviceHealthCheckService:
                 f"Updated device {device_id}: status={status.value}, "
                 f"last_seen={last_seen}"
             )
+            
+            # Broadcast status update via WebSocket
+            try:
+                await broadcaster.broadcast_device_status(
+                    school_id=device.school_id,
+                    device_id=device_id,
+                    status=status.value,
+                    last_seen=last_seen,
+                )
+            except Exception as e:
+                # Log but don't fail the status update if broadcasting fails
+                logger.warning(f"Failed to broadcast device status update: {e}")
+                
         except Exception as e:
             logger.error(f"Error updating device {device_id} status: {e}", exc_info=True)
 
