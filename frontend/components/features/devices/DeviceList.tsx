@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Search, Plus, AlertCircle, Inbox, Loader2 } from "lucide-react"
+import { Search, Plus, AlertCircle, Inbox, Loader2, FolderOpen } from "lucide-react"
 import { fadeInUp, staggerContainer } from "@/lib/animations/framer-motion"
 import { DeviceTableRow } from "./DeviceTableRow"
 import { DeviceListFilters } from "./DeviceListFilters"
@@ -29,6 +29,7 @@ export interface DeviceListProps {
   total: number
   onPageChange: (page: number) => void
   onAddDevice: () => void
+  onManageGroups?: () => void
   onDeviceClick: (id: number) => void
   onTestConnection: (id: number) => void
   isTestingConnection?: boolean
@@ -50,6 +51,7 @@ export function DeviceList({
   total,
   onPageChange,
   onAddDevice,
+  onManageGroups,
   onDeviceClick,
   onTestConnection,
   isTestingConnection = false,
@@ -76,14 +78,27 @@ export function DeviceList({
             Manage and monitor biometric devices in your school
           </p>
         </div>
-        <Button
-          onClick={onAddDevice}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
-          size="lg"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Device
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {onManageGroups && (
+            <Button
+              onClick={onManageGroups}
+              variant="outline"
+              className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+              size="lg"
+            >
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Manage Groups
+            </Button>
+          )}
+          <Button
+            onClick={onAddDevice}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            size="lg"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Device
+          </Button>
+        </div>
       </motion.div>
 
       {/* Filters and Search */}

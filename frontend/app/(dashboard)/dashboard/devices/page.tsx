@@ -12,6 +12,7 @@ import {
   type DeviceStatus,
   DeviceApiError,
 } from "@/lib/api/devices"
+import { listDeviceGroups } from "@/lib/api/device_groups"
 import { useDebounce } from "@/lib/hooks/useDebounce"
 
 export default function DevicesPage() {
@@ -27,10 +28,28 @@ export default function DevicesPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<DeviceStatus | null>(null)
   const [deviceGroupFilter, setDeviceGroupFilter] = useState<number | null>(null)
+  const [deviceGroups, setDeviceGroups] = useState<Array<{ id: number; name: string }>>([])
   const [isTestingConnection, setIsTestingConnection] = useState(false)
 
   // Debounce search to avoid too many API calls
   const debouncedSearch = useDebounce(search, 300)
+
+  // Load device groups
+  useEffect(() => {
+    const loadDeviceGroups = async () => {
+      if (!token) return
+
+      try {
+        const result = await listDeviceGroups(token, { page: 1, page_size: 100 })
+        setDeviceGroups(result.items.map((g) => ({ id: g.id, name: g.name })))
+      } catch (err) {
+        console.error("Failed to load device groups", err)
+        // Continue with empty list on error
+      }
+    }
+
+    loadDeviceGroups()
+  }, [token])
 
   const fetchDevices = useCallback(async () => {
     if (!token) {
@@ -88,7 +107,7 @@ export default function DevicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="flex-1 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Animated background shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
@@ -97,19 +116,7 @@ export default function DevicesPage() {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-8">
-        <motion.header
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUp}
-          className="mb-8"
-        >
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
-            Device Management
-          </h1>
-          <p className="text-muted-foreground">
-            Register and monitor biometric devices for student attendance tracking.
-          </p>
-        </motion.header>
+        
 
         <motion.main
           initial="hidden"
@@ -132,10 +139,11 @@ export default function DevicesPage() {
             total={total}
             onPageChange={setPage}
             onAddDevice={() => router.push("/dashboard/devices/new")}
+            onManageGroups={() => router.push("/dashboard/device-groups")}
             onDeviceClick={(id) => router.push(`/dashboard/devices/${id}/edit`)}
             onTestConnection={handleTestConnection}
             isTestingConnection={isTestingConnection}
-            deviceGroups={[]} // TODO: Load device groups when Phase 2 is implemented
+            deviceGroups={deviceGroups}
           />
         </motion.main>
       </div>

@@ -14,6 +14,7 @@ import { Loader2, Wifi, WifiOff, AlertCircle } from "lucide-react"
 import { fadeInUp } from "@/lib/animations/framer-motion"
 import { deviceFormSchema, deviceUpdateSchema, type DeviceFormData, type DeviceUpdateFormData } from "@/lib/validations/device"
 import { testDeviceConnection, testDeviceConnectionByAddress, type DeviceConnectionTestResponse } from "@/lib/api/devices"
+import { DeviceGroupSelector } from "./DeviceGroupSelector"
 
 export interface DeviceFormProps {
   deviceId?: number
@@ -41,18 +42,22 @@ export function DeviceForm({
   const isUpdate = !!deviceId
   const schema = isUpdate ? deviceUpdateSchema : deviceFormSchema
 
+  // Use conditional types based on update vs create mode
+  const form = useForm<DeviceFormData | DeviceUpdateFormData>({
+    resolver: zodResolver(schema) as any, // Type assertion needed due to union type complexity
+    defaultValues: initialData || {
+      port: 4370,
+    },
+  })
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     watch,
     setError,
-  } = useForm<DeviceFormData | DeviceUpdateFormData>({
-    resolver: zodResolver(schema),
-    defaultValues: initialData || {
-      port: 4370,
-    },
-  })
+    setValue,
+  } = form
 
   const ipAddress = watch("ip_address")
   const port = watch("port")
@@ -158,7 +163,7 @@ export function DeviceForm({
     >
       <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
         <div className="p-6">
-          <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onFormSubmit as any)} className="space-y-6">
             {/* Error Alert */}
             {submitError && (
               <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
@@ -328,8 +333,27 @@ export function DeviceForm({
               )}
             </div>
 
-            {/* Device Group - Placeholder for Phase 2 */}
-            {/* TODO: Add device group selector when Phase 2 is implemented */}
+            {/* Device Group */}
+            <div>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Device Group
+              </Label>
+              <div className="mt-1">
+                <DeviceGroupSelector
+                  value={watch("device_group_id")}
+                  onValueChange={(value) => setValue("device_group_id", value, { shouldValidate: true })}
+                  placeholder="Select a device group (optional)"
+                />
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Optional - Assign this device to a group for better organization
+              </p>
+              {errors.device_group_id && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  {errors.device_group_id.message}
+                </p>
+              )}
+            </div>
 
             {/* Form Actions */}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

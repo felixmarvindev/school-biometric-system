@@ -49,15 +49,21 @@ export function ClassForm({ classData, onSuccess, onCancel }: ClassFormProps) {
         throw new Error("Authentication required")
       }
 
-      const data: ClassCreateData | ClassUpdateData = {
-        name: name.trim(),
-        description: description.trim() || null,
-      }
+      const trimmedName = name.trim()
+      const trimmedDescription = description.trim() || null
 
       if (classData) {
-        await updateClass(token, classData.id, data)
+        // Update - use update schema
+        await updateClass(token, classData.id, {
+          name: trimmedName,
+          description: trimmedDescription,
+        })
       } else {
-        await createClass(token, data)
+        // Create - use create schema (name is required)
+        await createClass(token, {
+          name: trimmedName,
+          description: trimmedDescription,
+        })
       }
 
       onSuccess()

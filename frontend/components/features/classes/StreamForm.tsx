@@ -55,15 +55,22 @@ export function StreamForm({
         throw new Error("Authentication required")
       }
 
-      const data: StreamCreateData | StreamUpdateData = {
-        name: name.trim(),
-        description: description.trim() || null,
-      }
+      const trimmedName = name.trim()
+      const trimmedDescription = description.trim() || null
 
       if (streamData) {
-        await updateStream(token, streamData.id, data)
+        // Update - use update schema
+        await updateStream(token, streamData.id, {
+          name: trimmedName,
+          description: trimmedDescription,
+        })
       } else {
-        await createStream(token, { ...data, class_id: classId })
+        // Create - use create schema (name is required)
+        await createStream(token, {
+          name: trimmedName,
+          description: trimmedDescription,
+          class_id: classId,
+        })
       }
 
       onSuccess()
