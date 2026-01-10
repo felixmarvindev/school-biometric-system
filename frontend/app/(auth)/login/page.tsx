@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import Link from "next/link"
 import { login, LoginError, type UserResponse } from "@/lib/api/auth"
 import { useAuthStore } from "@/lib/store/authStore"
 import { decodeJwtPayload } from "@/lib/utils/jwt"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,6 +26,17 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Check for session expired message on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const expiredMessage = sessionStorage.getItem('session_expired_message')
+      if (expiredMessage) {
+        toast.error(expiredMessage, { duration: 5000 })
+        sessionStorage.removeItem('session_expired_message')
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -84,3 +84,70 @@ export function getLastNameFromToken(token: string): string | null {
   return payload?.last_name || null;
 }
 
+/**
+ * JWT token expiration payload structure.
+ */
+interface JwtExpirationPayload {
+  exp?: number; // Expiration time (Unix timestamp)
+  iat?: number; // Issued at (Unix timestamp)
+}
+
+/**
+ * Check if JWT token is expired.
+ * 
+ * @param token - JWT token string
+ * @param bufferSeconds - Optional buffer time in seconds before expiration (default: 0)
+ * @returns true if token is expired or will expire within buffer time, false otherwise
+ */
+export function isTokenExpired(token: string, bufferSeconds: number = 0): boolean {
+  const payload = decodeJwtPayload<JwtExpirationPayload>(token);
+  
+  if (!payload || !payload.exp) {
+    // If no expiration claim, consider token invalid
+    return true;
+  }
+  
+  // exp is Unix timestamp (seconds), Date.now() is milliseconds
+  const expirationTime = payload.exp * 1000; // Convert to milliseconds
+  const currentTime = Date.now();
+  const bufferTime = bufferSeconds * 1000; // Convert buffer to milliseconds
+  
+  // Token is expired if current time >= (expiration time - buffer)
+  return currentTime >= (expirationTime - bufferTime);
+}
+
+/**
+ * Get token expiration time.
+ * 
+ * @param token - JWT token string
+ * @returns Expiration Date object or null if expiration not found
+ */
+export function getTokenExpiration(token: string): Date | null {
+  const payload = decodeJwtPayload<JwtExpirationPayload>(token);
+  
+  if (!payload || !payload.exp) {
+    return null;
+  }
+  
+  // exp is Unix timestamp (seconds), convert to milliseconds
+  return new Date(payload.exp * 1000);
+}
+
+/**
+ * Get time until token expiration in milliseconds.
+ * 
+ * @param token - JWT token string
+ * @returns Milliseconds until expiration, or null if expiration not found or already expired
+ */
+export function getTimeUntilExpiration(token: string): number | null {
+  const expiration = getTokenExpiration(token);
+  
+  if (!expiration) {
+    return null;
+  }
+  
+  const timeUntilExpiration = expiration.getTime() - Date.now();
+  
+  // Return null if already expired
+  return timeUntilExpiration > 0 ? timeUntilExpiration : null;
+}

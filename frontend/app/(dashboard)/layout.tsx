@@ -7,6 +7,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { DashboardSidebar, DashboardHeader } from "@/components/features/dashboard"
 import { useAuthStore } from "@/lib/store/authStore"
+import { useSessionCheck } from "@/lib/hooks/useSessionCheck"
+import { isTokenExpired } from "@/lib/utils/jwt"
 
 export default function DashboardLayout({
   children,
@@ -54,7 +56,22 @@ export default function DashboardLayout({
       router.push("/login")
       return
     }
-  }, [hasHydrated, token, user, router])
+
+    // Check if token is expired on mount
+    if (token && isTokenExpired(token)) {
+      logout()
+      router.push("/login")
+      return
+    }
+  }, [hasHydrated, token, user, router, logout])
+
+  // Use session check hook for periodic token validation
+  useSessionCheck({
+    checkInterval: 60000, // Check every minute
+    warningBufferSeconds: 300, // Show warning 5 minutes before expiration
+    logoutBufferSeconds: 0, // Log out at exact expiration
+    showWarning: true,
+  })
 
   const handleLogout = () => {
     logout()

@@ -44,6 +44,10 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
         });
+        // Clear localStorage (persist middleware handles this, but ensure it's cleared)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage');
+        }
       },
       
       setUser: (user: UserResponse) => {
