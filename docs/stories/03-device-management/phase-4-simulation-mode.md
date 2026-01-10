@@ -1,8 +1,8 @@
-# Phase 4: Simulation Mode
+# Phase 5: Simulation Mode (Optional - For Later)
 
 ## Goal
 
-Enable demo and testing mode without requiring physical ZKTeco devices.
+Enable demo and testing mode without requiring physical ZKTeco devices. **This phase is optional and can be implemented later after real device integration is complete.**
 
 ## Duration Estimate
 
@@ -10,7 +10,8 @@ Enable demo and testing mode without requiring physical ZKTeco devices.
 
 ## Prerequisites
 
-- ✅ Phase 3 complete (device monitoring working)
+- ✅ Phase 4 complete (device monitoring working with real devices)
+- ⚠️ **NOTE**: This phase is deferred. Focus on real device integration first.
 
 ## Technical Components
 
@@ -34,13 +35,20 @@ Enable demo and testing mode without requiring physical ZKTeco devices.
 - [ ] Simulated responses work correctly
 - [ ] Clear indication when in simulation mode
 
-## Story Complete
+## Notes
 
-This completes Story 03: Device Management. Devices can now be:
+- **Priority**: Low - Implement after real device integration is stable
+- **Use Case**: Useful for demos and testing when devices are not available
+- **Implementation**: Can reuse real device service patterns with mock responses
+
+## Story Status After Phase 4
+
+After Phase 4, Story 03: Device Management is functionally complete with real devices:
 - ✅ Registered and managed
 - ✅ Organized into groups
+- ✅ Real device integration working
 - ✅ Monitored in real-time
-- ✅ Simulated for demos
+- ⏸️ Simulation mode (optional, for later)
 
 **Next Story**: Story 04: Automated Enrollment - The killer feature!
 

@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     SIMULATION_DELAY_MAX: float = 3.0  # Max delay in seconds
     DEFAULT_DEVICE_TIMEOUT: int = 5  # Connection timeout in seconds
     DEVICE_HEALTH_CHECK_INTERVAL: int = 5  # Health check interval in seconds (default: 5 minutes)
-    
+
 
     # Security (shared with school_service)
     SECRET_KEY: str = "dev-secret-key-change-in-production"

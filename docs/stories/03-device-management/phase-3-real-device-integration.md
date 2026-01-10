@@ -65,5 +65,5 @@ See [tasks/](tasks/) folder:
 
 ## Next Phase
 
-**Phase 4: Device Monitoring** - Real-time status monitoring with real devices.
+**Phase 4: Device Monitoring** - Real-time status monitoring with real device communication.
 

@@ -35,5 +35,5 @@ Enable organizing devices into logical groups (e.g., by location or purpose).
 
 ## Next Phase
 
-**Phase 3: Device Monitoring** - Add real-time status monitoring.
+**Phase 3: Real Device Integration** - Integrate with real ZKTeco devices to fetch device information.
 
