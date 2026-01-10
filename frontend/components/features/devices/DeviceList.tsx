@@ -284,6 +284,7 @@ export function DeviceList({
                     <TableHead>Location</TableHead>
                     <TableHead>Last Seen</TableHead>
                     <TableHead>Serial Number</TableHead>
+                    <TableHead>Capacity</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>

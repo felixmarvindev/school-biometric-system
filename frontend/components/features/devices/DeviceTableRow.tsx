@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { DeviceStatusBadge } from "./DeviceStatusBadge"
+import { DeviceCapacityIndicator } from "./DeviceCapacityIndicator"
 import { staggerItem } from "@/lib/animations/framer-motion"
 import { type DeviceResponse, type DeviceStatus } from "@/lib/api/devices"
 import { Wifi, WifiOff, Clock } from "lucide-react"
@@ -99,6 +100,13 @@ export function DeviceTableRow({
         ) : (
           <span className="text-muted-foreground">—</span>
         )}
+      </TableCell>
+      <TableCell className="cursor-pointer" onClick={() => onDeviceClick(device.id)}>
+        <DeviceCapacityIndicator
+          maxUsers={device.max_users}
+          enrolledUsers={device.enrolled_users}
+          compact={true}
+        />
       </TableCell>
       <TableCell>
         <Button

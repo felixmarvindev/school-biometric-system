@@ -7,6 +7,7 @@ import math
 
 from device_service.core.database import get_db
 from device_service.services.device_service import DeviceService
+from device_service.services.device_capacity import DeviceCapacityService
 from device_service.api.dependencies import get_current_user
 from shared.schemas.device import (
     DeviceCreate,
@@ -434,4 +435,97 @@ async def test_connection_by_address(
             success=False,
             message=f"Connection failed: {str(e)}",
         )
+
+
+@router.get(
+    "/{device_id}/capacity",
+    summary="Get device capacity",
+    description="""
+    Get capacity information for a device (max users, enrolled users, percentage, etc.).
+    
+    Only returns capacity for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {"description": "Capacity information retrieved successfully"},
+        404: {"description": "Device not found"},
+        403: {"description": "Device belongs to different school"},
+    },
+)
+async def get_device_capacity(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get device capacity information.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only returns capacity for devices in user's school
+    """
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found",
+        )
+    
+    capacity_service = DeviceCapacityService(db)
+    capacity = await capacity_service.get_device_capacity(device_id)
+    
+    return capacity
+
+
+@router.post(
+    "/{device_id}/capacity/refresh",
+    summary="Refresh device capacity",
+    description="""
+    Refresh device capacity from the device and update database.
+    
+    In simulation mode, sets a default capacity if not set.
+    In production mode, will query the device for max_users (future enhancement).
+    
+    Only works for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {"description": "Capacity refreshed successfully"},
+        404: {"description": "Device not found"},
+        403: {"description": "Device belongs to different school"},
+    },
+)
+async def refresh_device_capacity(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Refresh device capacity from device.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only works for devices in user's school
+    """
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found",
+        )
+    
+    capacity_service = DeviceCapacityService(db)
+    capacity = await capacity_service.refresh_device_capacity(device_id)
+    
+    return capacity
 

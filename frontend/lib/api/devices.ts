@@ -566,6 +566,149 @@ export async function testDeviceConnection(
  * @returns Promise resolving to connection test result
  * @throws DeviceApiError if request fails
  */
+/**
+ * Device capacity information.
+ */
+export interface DeviceCapacity {
+  device_id: number;
+  max_users: number | null;
+  enrolled_users: number;
+  available: number | null;
+  percentage: number | null;
+  is_full: boolean;
+  is_warning: boolean;
+  is_critical: boolean;
+}
+
+/**
+ * Get device capacity information.
+ * 
+ * @param token - JWT authentication token
+ * @param deviceId - Device ID
+ * @returns Promise resolving to device capacity information
+ * @throws DeviceApiError if request fails
+ */
+export async function getDeviceCapacity(
+  token: string,
+  deviceId: number
+): Promise<DeviceCapacity> {
+  try {
+    const response = await axios.get<DeviceCapacity>(
+      `${API_BASE_URL}/api/v1/devices/${deviceId}/capacity`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401) {
+        throw new DeviceApiError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new DeviceApiError('Device not found', statusCode);
+      }
+
+      if (statusCode === 403) {
+        throw new DeviceApiError('Access denied to this device', statusCode);
+      }
+
+      throw new DeviceApiError(
+        errorData?.detail || 'Failed to get device capacity',
+        statusCode
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof DeviceApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new DeviceApiError(
+        error.message || 'Failed to get device capacity',
+        error.response?.status || 500
+      );
+    }
+    throw new DeviceApiError('An unexpected error occurred', 500);
+  }
+}
+
+/**
+ * Refresh device capacity from device.
+ * 
+ * @param token - JWT authentication token
+ * @param deviceId - Device ID
+ * @returns Promise resolving to refreshed device capacity information
+ * @throws DeviceApiError if request fails
+ */
+export async function refreshDeviceCapacity(
+  token: string,
+  deviceId: number
+): Promise<DeviceCapacity> {
+  try {
+    const response = await axios.post<DeviceCapacity>(
+      `${API_BASE_URL}/api/v1/devices/${deviceId}/capacity/refresh`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401) {
+        throw new DeviceApiError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new DeviceApiError('Device not found', statusCode);
+      }
+
+      if (statusCode === 403) {
+        throw new DeviceApiError('Access denied to this device', statusCode);
+      }
+
+      throw new DeviceApiError(
+        errorData?.detail || 'Failed to refresh device capacity',
+        statusCode
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof DeviceApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new DeviceApiError(
+        error.message || 'Failed to refresh device capacity',
+        error.response?.status || 500
+      );
+    }
+    throw new DeviceApiError('An unexpected error occurred', 500);
+  }
+}
+
 export async function testDeviceConnectionByAddress(
   token: string,
   testData: DeviceConnectionTestByAddressRequest

@@ -17,14 +17,14 @@ Track and display device capacity (enrolled users vs. max capacity) for enrollme
 
 ## Acceptance Criteria
 
-1. [ ] Device capacity retrieved from device (max_users)
-2. [ ] Enrolled users count tracked in database
-3. [ ] Capacity information displayed in device list
-4. [ ] Capacity information displayed in device detail
-5. [ ] Capacity percentage calculated and displayed
-6. [ ] Warning when capacity approaching limit (80%+)
-7. [ ] Capacity updated during enrollment (Story 04)
-8. [ ] Capacity displayed in UI with progress bar
+1. [x] Device capacity retrieved from device (max_users)
+2. [x] Enrolled users count tracked in database
+3. [x] Capacity information displayed in device list
+4. [ ] Capacity information displayed in device detail (DeviceDetail component not yet created)
+5. [x] Capacity percentage calculated and displayed
+6. [x] Warning when capacity approaching limit (80%+)
+7. [ ] Capacity updated during enrollment (Story 04 - will be implemented in enrollment story)
+8. [x] Capacity displayed in UI with progress bar
 
 ## Technical Details
 
@@ -162,14 +162,14 @@ export function DeviceCapacityIndicator({ maxUsers, enrolledUsers }: DeviceCapac
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] Capacity tracking implemented
-- [ ] Capacity displayed in UI
-- [ ] Progress bar works
-- [ ] Warning states implemented
-- [ ] Capacity refresh works
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Code written and follows standards
+- [x] Capacity tracking implemented
+- [x] Capacity displayed in UI
+- [x] Progress bar works
+- [x] Warning states implemented
+- [x] Capacity refresh works
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 

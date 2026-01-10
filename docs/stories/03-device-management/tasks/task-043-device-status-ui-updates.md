@@ -17,14 +17,14 @@ Integrate WebSocket client in frontend to receive and display real-time device s
 
 ## Acceptance Criteria
 
-1. [ ] WebSocket client hook created
-2. [ ] Device list subscribes to status updates
-3. [ ] Status indicators update in real-time
-4. [ ] Last_seen timestamps update in real-time
-5. [ ] Connection status indicator (connected/disconnected)
-6. [ ] Automatic reconnection on disconnect
-7. [ ] Loading states during initial connection
-8. [ ] Error handling for connection failures
+1. [x] WebSocket client hook created
+2. [x] Device list subscribes to status updates
+3. [x] Status indicators update in real-time
+4. [x] Last_seen timestamps update in real-time
+5. [x] Connection status indicator (connected/disconnected)
+6. [x] Automatic reconnection on disconnect
+7. [x] Loading states during initial connection
+8. [x] Error handling for connection failures
 
 ## Technical Details
 
@@ -177,15 +177,15 @@ export function DeviceList({ devices, ... }) {
 
 ## Definition of Done
 
-- [ ] Code written and follows standards
-- [ ] WebSocket hook implemented
-- [ ] Real-time updates work
-- [ ] Connection indicator displays
-- [ ] Auto-reconnection works
-- [ ] Error handling comprehensive
-- [ ] Loading states implemented
-- [ ] Code reviewed
-- [ ] Tested in browser
+- [x] Code written and follows standards
+- [x] WebSocket hook implemented
+- [x] Real-time updates work
+- [x] Connection indicator displays
+- [x] Auto-reconnection works
+- [x] Error handling comprehensive
+- [x] Loading states implemented
+- [x] Code reviewed
+- [x] Tested in browser
 
 ## Time Estimate
 

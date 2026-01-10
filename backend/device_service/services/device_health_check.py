@@ -94,7 +94,8 @@ class DeviceHealthCheckService:
                 online_count = sum(1 for r in results if r is True)
                 offline_count = sum(1 for r in results if r is False)
                 error_count = sum(1 for r in results if isinstance(r, Exception))
-                
+
+
                 logger.info(
                     f"Health check complete: {online_count} online, "
                     f"{offline_count} offline, {error_count} errors"
