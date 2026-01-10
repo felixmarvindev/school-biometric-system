@@ -37,6 +37,9 @@ httpx==0.27.2
 # Utilities
 python-dotenv==1.0.1
 
+# ZKTeco Device Integration
+pyzk==0.9.0  # ZKTeco biometric device communication library
+
 # Logging
 structlog==24.4.0
 
@@ -49,3 +52,5 @@ isort==5.13.2
 mypy==1.11.2
 ruff==0.6.9
 
+
+zk

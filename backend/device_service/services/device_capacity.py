@@ -51,10 +51,10 @@ class DeviceCapacityService:
 
     async def refresh_device_capacity(self, device_id: int) -> Optional[Dict[str, Any]]:
         """
-        Refresh capacity from device and update database.
+        Refresh capacity from real device and update database.
 
-        Note: Currently returns current capacity from database.
-        In the future, this will query the device directly for max_users.
+        Fetches max_users capacity directly from the device using ZKTeco protocol.
+        Falls back to simulation mode if SIMULATION_MODE is enabled.
 
         Args:
             device_id: Device ID
@@ -67,8 +67,7 @@ class DeviceCapacityService:
         if not device:
             return None
 
-        # TODO: In the future, query device for max_users using ZKTeco protocol
-        # For now, just return current capacity from database
+        # Handle simulation mode
         if settings.SIMULATION_MODE:
             # Simulate device capacity if not set
             if device.max_users is None or device.max_users == 0:
@@ -78,6 +77,57 @@ class DeviceCapacityService:
                 await self.db.commit()
                 await self.db.refresh(device)
                 logger.info(f"Set simulated max_users={simulated_max} for device {device_id}")
+            return await self.get_device_capacity(device_id)
+
+        # Real device mode - fetch capacity from device
+        from device_service.services.device_info_service import DeviceInfoService
+        from device_service.services.device_connection import DeviceConnectionService
+
+        try:
+            connection_service = DeviceConnectionService(self.db)
+            info_service = DeviceInfoService(self.db, connection_service)
+
+            # Fetch capacity from real device
+            capacity_info = await info_service.fetch_device_capacity(device)
+
+            if capacity_info and "users_cap" in capacity_info:
+                # Update max_users in database using users_cap (maximum capacity)
+                # users_cap is the maximum users the device can store
+                max_users = capacity_info["users_cap"]
+                if max_users and max_users > 0:
+                    device.max_users = max_users
+                    await self.db.commit()
+                    await self.db.refresh(device)
+                    logger.info(
+                        f"Updated device {device_id} max_users to {max_users} "
+                        f"from real device (users_cap)"
+                    )
+                else:
+                    logger.warning(
+                        f"Device {device_id} returned invalid users_cap: {max_users}. "
+                        f"Capacity info: {capacity_info}"
+                    )
+            elif capacity_info:
+                logger.warning(
+                    f"Device {device_id} capacity info missing 'users_cap' field. "
+                    f"Available fields: {list(capacity_info.keys())}"
+                )
+            else:
+                logger.warning(
+                    f"Could not fetch capacity from device {device_id}. "
+                    f"Keeping existing value: {device.max_users}"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Error refreshing capacity from device {device_id}: {e}",
+                exc_info=True
+            )
+            # Don't fail - return current capacity from database
+            logger.warning(
+                f"Failed to refresh capacity from device {device_id}. "
+                f"Returning current database value."
+            )
 
         return await self.get_device_capacity(device_id)
 

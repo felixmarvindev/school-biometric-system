@@ -20,12 +20,12 @@ Implement functionality to fetch the device serial number directly from a real Z
 
 ## Acceptance Criteria
 
-- [ ] Can fetch device serial number from real device
-- [ ] Serial number is returned in API response
-- [ ] Serial number is stored in database if device registration
-- [ ] Error handling for devices that don't support serial number retrieval
-- [ ] Serial number format is validated
-- [ ] API endpoint returns serial number
+- [x] Can fetch device serial number from real device ✅
+- [x] Serial number is returned in API response ✅
+- [x] Serial number is stored in database (via fetch_all_device_info with update_serial=True) ✅
+- [x] Error handling for devices that don't support serial number retrieval ✅
+- [x] Serial number format is validated ✅
+- [x] API endpoint returns serial number (`GET /api/v1/devices/{device_id}/serial`) ✅
 
 ## Implementation Details
 

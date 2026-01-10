@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     SIMULATION_DELAY_MAX: float = 3.0  # Max delay in seconds
     DEFAULT_DEVICE_TIMEOUT: int = 5  # Connection timeout in seconds
     DEVICE_HEALTH_CHECK_INTERVAL: int = 5  # Health check interval in seconds (default: 5 minutes)
+    
+    # ZKTeco Device Connection Settings
+    DEVICE_DEFAULT_PORT: int = 4370  # Default ZKTeco device port
+    DEVICE_CONNECTION_RETRY_ATTEMPTS: int = 3  # Number of connection retry attempts
+    DEVICE_CONNECTION_RETRY_DELAY: float = 1.0  # Delay between retry attempts (seconds)
+    DEVICE_CONNECTION_POOL_SIZE: int = 10  # Maximum number of concurrent device connections
+    DEVICE_OMIT_PING: bool = False  # Whether to omit ping during connection (some devices need this)
 
 
     # Security (shared with school_service)

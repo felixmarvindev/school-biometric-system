@@ -17,6 +17,9 @@ from shared.schemas.device import (
     DeviceConnectionTest,
     DeviceConnectionTestResponse,
     DeviceConnectionTestByAddress,
+    DeviceSerialResponse,
+    DeviceInfoResponse,
+    DeviceTimeResponse,
 )
 from shared.schemas.user import UserResponse
 from device_service.models.device import DeviceStatus
@@ -336,47 +339,36 @@ async def test_device_connection(
             detail=f"Device with ID {device_id} not found",
         )
     
-    # Test connection
+    # Test connection using ZKTeco protocol (not just TCP)
     connection_service = DeviceConnectionService()
     
-    try:
-        # Attempt TCP connection (basic connectivity test)
-        start_time = datetime.utcnow()
-        
-        reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(device.ip_address, device.port),
-            timeout=test_config.timeout
-        )
-        writer.close()
-        await writer.wait_closed()
-        
-        # Connection successful
-        end_time = datetime.utcnow()
-        response_time_ms = int((end_time - start_time).total_seconds() * 1000)
-        
-        # Update device status
+    # Use real ZKTeco protocol connection test
+    password = int(device.com_password) if device.com_password else None
+    test_result = await connection_service.test_connection(
+        ip_address=device.ip_address,
+        port=device.port,
+        password=password,
+        timeout=test_config.timeout,
+    )
+    
+    # Update device status based on test result
+    if test_result["success"]:
         await device_service.update_device_status(
             device_id=device_id,
             status=DeviceStatus.ONLINE,
             last_seen=datetime.utcnow()
         )
-        
-        return DeviceConnectionTestResponse(
-            success=True,
-            message="Connection successful",
-            response_time_ms=response_time_ms,
-        )
-    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
-        # Connection failed
+    else:
         await device_service.update_device_status(
             device_id=device_id,
             status=DeviceStatus.OFFLINE,
         )
-        
-        return DeviceConnectionTestResponse(
-            success=False,
-            message=f"Connection failed: {str(e)}",
-        )
+    
+    return DeviceConnectionTestResponse(
+        success=test_result["success"],
+        message=test_result["message"],
+        response_time_ms=test_result.get("response_time_ms", 0),
+    )
 
 
 @router.post(
@@ -401,40 +393,32 @@ async def test_connection_by_address(
     current_user: UserResponse = Depends(get_current_user),
 ):
     """
-    Test device connection by IP address and port.
+    Test device connection by IP address and port using ZKTeco protocol.
     
     - **Authentication**: Required (JWT token)
     - **Use case**: Test connection before creating a device
+    - **Protocol**: Uses ZKTeco protocol handshake, not just TCP socket test
     """
-    import asyncio
-    from datetime import datetime
+    from device_service.services.device_connection import DeviceConnectionService
     
-    try:
-        # Attempt TCP connection (basic connectivity test)
-        start_time = datetime.utcnow()
-        
-        reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(test_data.ip_address, test_data.port),
-            timeout=test_data.timeout
-        )
-        writer.close()
-        await writer.wait_closed()
-        
-        # Connection successful
-        end_time = datetime.utcnow()
-        response_time_ms = int((end_time - start_time).total_seconds() * 1000)
-        
-        return DeviceConnectionTestResponse(
-            success=True,
-            message="Connection successful",
-            response_time_ms=response_time_ms,
-        )
-    except (asyncio.TimeoutError, ConnectionRefusedError, OSError) as e:
-        # Connection failed
-        return DeviceConnectionTestResponse(
-            success=False,
-            message=f"Connection failed: {str(e)}",
-        )
+    connection_service = DeviceConnectionService()
+    
+    # Convert password if provided (com_password is a string in schema, convert to int)
+    password = int(test_data.com_password) if test_data.com_password else None
+    
+    # Use real ZKTeco protocol connection test
+    test_result = await connection_service.test_connection(
+        ip_address=test_data.ip_address,
+        port=test_data.port,
+        password=password,
+        timeout=test_data.timeout,
+    )
+    
+    return DeviceConnectionTestResponse(
+        success=test_result["success"],
+        message=test_result["message"],
+        response_time_ms=test_result.get("response_time_ms", 0),
+    )
 
 
 @router.get(
@@ -528,4 +512,362 @@ async def refresh_device_capacity(
     capacity = await capacity_service.refresh_device_capacity(device_id)
     
     return capacity
+
+
+@router.get(
+    "/{device_id}/info",
+    response_model=DeviceInfoResponse,
+    summary="Get device information",
+    description="""
+    Fetch comprehensive device information (serial, model, firmware, time, capacity) 
+    directly from the real device.
+    
+    This endpoint connects to the device and retrieves all available information.
+    Some fields may be None if the device doesn't support certain queries.
+    
+    Only works for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {
+            "description": "Device information retrieved successfully",
+            "model": DeviceInfoResponse,
+        },
+        404: {"description": "Device not found"},
+        503: {"description": "Device connection failed"},
+    },
+)
+async def get_device_info(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Fetch all device information from real device.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only works for devices in user's school
+    - **Device Connection**: Requires device to be online and reachable
+    - **Note**: Some fields may be None if device doesn't support them
+    """
+    from device_service.services.device_info_service import DeviceInfoService
+    
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    
+    # Fetch all device information
+    info_service = DeviceInfoService(db)
+    info = await info_service.fetch_all_device_info(device, update_serial=True)
+    
+    # Check if we got at least some info (not all None)
+    # Capacity is a dict, so check if it has values separately
+    capacity = info.get("capacity")
+    has_capacity = capacity and isinstance(capacity, dict) and any(capacity.values())
+    has_other_info = any(
+        v is not None 
+        for k, v in info.items() 
+        if k != "capacity"
+    )
+    has_info = has_capacity or has_other_info
+    
+    if not has_info:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Could not fetch device information. "
+                "Device may be offline or the device does not support information retrieval."
+            )
+        )
+    
+    return DeviceInfoResponse(
+        serial_number=info.get("serial_number"),
+        device_name=info.get("device_name"),
+        firmware_version=info.get("firmware_version"),
+        device_time=info.get("device_time"),
+        capacity=info.get("capacity"),
+        device_id=device_id,
+    )
+
+
+@router.get(
+    "/{device_id}/time",
+    response_model=DeviceTimeResponse,
+    summary="Get device time",
+    description="""
+    Fetch current device time directly from the real device.
+    
+    This is useful for:
+    - Verifying device clock synchronization
+    - Debugging attendance time discrepancies
+    - Comparing device time with server time
+    
+    Only works for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {
+            "description": "Device time retrieved successfully",
+            "model": DeviceTimeResponse,
+        },
+        404: {"description": "Device not found"},
+        503: {"description": "Device connection failed"},
+    },
+)
+async def get_device_time(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Fetch device time from real device.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only works for devices in user's school
+    - **Device Connection**: Requires device to be online and reachable
+    """
+    from datetime import datetime
+    from device_service.services.device_info_service import DeviceInfoService
+    
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    
+    # Fetch device time
+    info_service = DeviceInfoService(db)
+    device_time_str = await info_service.fetch_device_time(device)
+    
+    if device_time_str is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Could not fetch time from device. "
+                "Device may be offline or the device does not support time retrieval."
+            )
+        )
+    
+    # Get server time for comparison
+    server_time = datetime.utcnow()
+    server_time_iso = server_time.isoformat() + "Z"
+    
+    # Calculate time difference if possible (parse device time)
+    time_difference = None
+    try:
+        # Try to parse device time string (format may vary)
+        # Common ZKTeco formats: "2024-01-10 14:30:00" or "2024-01-10T14:30:00"
+        # Use datetime.strptime with common formats
+        from datetime import datetime as dt
+        
+        device_time_dt = None
+        # Try common formats
+        time_formats = [
+            "%Y-%m-%d %H:%M:%S",  # "2024-01-10 14:30:00"
+            "%Y-%m-%dT%H:%M:%S",  # "2024-01-10T14:30:00"
+            "%Y-%m-%d %H:%M:%S.%f",  # "2024-01-10 14:30:00.123456"
+        ]
+        
+        for fmt in time_formats:
+            try:
+                device_time_dt = dt.strptime(device_time_str.strip(), fmt)
+                break
+            except ValueError:
+                continue
+        
+        if device_time_dt:
+            # Calculate difference (assume device time is in same timezone as server UTC)
+            time_difference = (device_time_dt - server_time.replace(tzinfo=None)).total_seconds()
+    except Exception as e:
+        # If parsing fails, just return without time difference
+        logger.debug(f"Could not parse device time '{device_time_str}' for comparison: {e}")
+    
+    return DeviceTimeResponse(
+        device_time=device_time_str,
+        server_time=server_time_iso,
+        time_difference_seconds=time_difference,
+        device_id=device_id,
+    )
+
+
+@router.post(
+    "/{device_id}/info/refresh",
+    response_model=DeviceInfoResponse,
+    summary="Refresh all device information",
+    description="""
+    Refresh all device information from the real device and update database where applicable.
+    
+    This endpoint:
+    - Fetches serial number, model, firmware, time, and capacity
+    - Updates serial number in database
+    - Updates max_users capacity in database
+    - Returns all fetched information
+    
+    Only works for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {
+            "description": "Device information refreshed successfully",
+            "model": DeviceInfoResponse,
+        },
+        404: {"description": "Device not found"},
+        503: {"description": "Device connection failed"},
+    },
+)
+async def refresh_device_info(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Refresh all device information from real device.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only works for devices in user's school
+    - **Device Connection**: Requires device to be online and reachable
+    - **Database Updates**: Serial number and capacity are automatically updated
+    """
+    from device_service.services.device_info_service import DeviceInfoService
+    
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    
+    # Fetch all device information (this updates serial in database)
+    info_service = DeviceInfoService(db)
+    info = await info_service.fetch_all_device_info(device, update_serial=True)
+    
+    # Update capacity in database if available
+    capacity = info.get("capacity")
+    if capacity and isinstance(capacity, dict) and "users_cap" in capacity:
+        # users_cap is the maximum users capacity from device
+        max_users = capacity["users_cap"]
+        if max_users and max_users > 0:
+            device.max_users = max_users
+            await db.commit()
+            await db.refresh(device)
+            logger.info(f"Updated device {device_id} max_users to {max_users} (from users_cap)")
+    
+    # Check if we got at least some info
+    has_capacity = capacity and isinstance(capacity, dict) and any(capacity.values())
+    has_other_info = any(
+        v is not None 
+        for k, v in info.items() 
+        if k != "capacity"
+    )
+    has_info = has_capacity or has_other_info
+    
+    if not has_info:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Could not fetch device information. "
+                "Device may be offline or the device does not support information retrieval."
+            )
+        )
+    
+    return DeviceInfoResponse(
+        serial_number=info.get("serial_number"),
+        device_name=info.get("device_name"),
+        firmware_version=info.get("firmware_version"),
+        device_time=info.get("device_time"),
+        capacity=info.get("capacity"),
+        device_id=device_id,
+    )
+
+
+@router.get(
+    "/{device_id}/serial",
+    response_model=DeviceSerialResponse,
+    summary="Get device serial number",
+    description="""
+    Fetch device serial number directly from the real device.
+    
+    This endpoint connects to the device using ZKTeco protocol and retrieves
+    the device's serial number. The serial number is then automatically stored in the database.
+    
+    Only works for devices in the authenticated user's school.
+    """,
+    responses={
+        200: {
+            "description": "Serial number retrieved successfully",
+            "model": DeviceSerialResponse,
+        },
+        404: {"description": "Device not found"},
+        503: {"description": "Device connection failed or device does not support serial number retrieval"},
+    },
+)
+async def get_device_serial(
+    device_id: int = Path(..., description="Device ID"),
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Fetch device serial number from real device.
+    
+    - **Authentication**: Required (JWT token)
+    - **Authorization**: Only works for devices in user's school
+    - **Device Connection**: Requires device to be online and reachable
+    - **Database Update**: Serial number is automatically saved to device record
+    """
+    from device_service.services.device_info_service import DeviceInfoService
+    
+    device_service = DeviceService(db)
+    
+    # Verify device exists and belongs to user's school
+    device = await device_service.get_device_by_id(
+        device_id=device_id,
+        school_id=current_user.school_id
+    )
+    
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    
+    # Fetch serial number from device
+    info_service = DeviceInfoService(db)
+    serial = await info_service.fetch_device_serial(device, update_database=True)
+    
+    if serial is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Could not fetch serial number from device. "
+                "Device may be offline or the device does not support serial number retrieval."
+            )
+        )
+    
+    return DeviceSerialResponse(
+        serial_number=serial,
+        device_id=device_id,
+        updated=True,
+    )
 

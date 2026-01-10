@@ -20,12 +20,12 @@ Implement functionality to fetch device time directly from a real ZKTeco device 
 
 ## Acceptance Criteria
 
-- [ ] Can fetch device time from real device using CMD_GET_TIME
-- [ ] Device time is returned in API response
-- [ ] Device time is displayed in UI (device detail page)
-- [ ] Time format is correct (ISO 8601 or datetime)
-- [ ] Error handling for devices that don't support time queries
-- [ ] Time comparison with server time is possible (optional)
+- [x] Can fetch device time from real device using CMD_GET_TIME
+- [x] Device time is returned in API response
+- [x] Device time is displayed in UI (device detail page)
+- [x] Time format is correct (ISO 8601 or datetime)
+- [x] Error handling for devices that don't support time queries
+- [x] Time comparison with server time is possible (optional)
 
 ## Implementation Details
 

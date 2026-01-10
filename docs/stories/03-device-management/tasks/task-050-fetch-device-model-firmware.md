@@ -20,12 +20,13 @@ Implement functionality to fetch device model name and firmware version directly
 
 ## Acceptance Criteria
 
-- [ ] Can fetch device model from real device
-- [ ] Can fetch firmware version from real device
-- [ ] Model and firmware are returned in API response
-- [ ] Model and firmware are displayed in UI
-- [ ] Error handling for devices that don't support these queries
-- [ ] Device model and firmware stored (optional - may add fields to Device model)
+- [x] Can fetch device model from real device (via get_device_name()) ✅
+- [x] Can fetch firmware version from real device (via get_firmware_version()) ✅
+- [x] Model and firmware are returned in API response (DeviceInfoResponse) ✅
+- [x] Error handling for devices that don't support these queries ✅
+- [x] Device model and firmware available via device info endpoint (`GET /api/v1/devices/{device_id}/info`) ✅
+- [ ] Model and firmware displayed in UI (Frontend UI pending)
+- [ ] Device model and firmware stored in database (Optional - currently fetched on-demand)
 
 ## Implementation Details
 

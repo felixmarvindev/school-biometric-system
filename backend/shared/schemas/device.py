@@ -103,6 +103,14 @@ class DeviceConnectionTest(BaseModel):
     )
 
 
+class DeviceSerialResponse(BaseModel):
+    """Response schema for device serial number fetch."""
+
+    serial_number: str = Field(..., description="Device serial number")
+    device_id: int = Field(..., description="Device ID")
+    updated: bool = Field(..., description="Whether serial number was updated in database")
+
+
 class DeviceConnectionTestByAddress(BaseModel):
     """Schema for connection test by IP address and port (before device creation)."""
 
@@ -131,4 +139,24 @@ class DeviceConnectionTestResponse(BaseModel):
     message: str
     device_info: Optional[dict] = None  # Device information if connection successful
     response_time_ms: Optional[int] = None
+
+
+class DeviceInfoResponse(BaseModel):
+    """Response schema for comprehensive device information."""
+
+    serial_number: Optional[str] = Field(None, description="Device serial number")
+    device_name: Optional[str] = Field(None, description="Device model/name")
+    firmware_version: Optional[str] = Field(None, description="Firmware version")
+    device_time: Optional[str] = Field(None, description="Device current time")
+    capacity: Optional[dict] = Field(None, description="Device capacity information")
+    device_id: int = Field(..., description="Device ID")
+
+
+class DeviceTimeResponse(BaseModel):
+    """Response schema for device time."""
+
+    device_time: str = Field(..., description="Device current time")
+    server_time: str = Field(..., description="Server current time (ISO 8601)")
+    time_difference_seconds: Optional[float] = Field(None, description="Time difference in seconds (device - server)")
+    device_id: int = Field(..., description="Device ID")
 

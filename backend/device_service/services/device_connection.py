@@ -1,24 +1,198 @@
-"""Service for device connection operations."""
+"""Service for device connection operations using ZKTeco protocol."""
 
-from typing import Optional
+import logging
+from typing import Optional, Dict, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from device_service.core.config import settings
+from device_service.zk.base import ZKDeviceConnection
+from device_service.models.device import Device
+from device_service.repositories.device_repository import DeviceRepository
+
+logger = logging.getLogger(__name__)
 
 
 class DeviceConnectionService:
-    """Service for device connection operations."""
+    """
+    Service for managing ZKTeco device connections.
     
-    def __init__(self):
-        """Initialize device connection service."""
-        pass
+    This service provides methods for connecting to real ZKTeco devices,
+    testing connections, and managing connection state.
+    """
+    
+    def __init__(self, db: Optional[AsyncSession] = None):
+        """
+        Initialize device connection service.
+        
+        Args:
+            db: Optional database session for device operations
+        """
+        self.db = db
+        self.repository = DeviceRepository(db) if db else None
+        # Connection pool/cache - stores active connections by device_id
+        self._connections: Dict[int, ZKDeviceConnection] = {}
+    
+    async def get_connection(self, device: Device) -> Optional[ZKDeviceConnection]:
+        """
+        Get or create a connection to a device.
+        
+        Args:
+            device: Device model instance
+        
+        Returns:
+            ZKDeviceConnection instance or None if connection fails
+        """
+        # Check if connection exists and is still valid
+        if device.id in self._connections:
+            conn = self._connections[device.id]
+            # Test if connection is still active
+            if await conn.test_connection():
+                logger.debug(f"Reusing existing connection for device {device.id}")
+                return conn
+            else:
+                # Remove stale connection
+                logger.debug(f"Removing stale connection for device {device.id}")
+                del self._connections[device.id]
+                await conn.disconnect()
+        
+        # Create new connection
+        password = int(device.com_password) if device.com_password else None
+        conn = ZKDeviceConnection(
+            ip=device.ip_address,
+            port=device.port,
+            password=password,
+            timeout=settings.DEFAULT_DEVICE_TIMEOUT,
+            ommit_ping=False,
+        )
+        
+        if await conn.connect():
+            self._connections[device.id] = conn
+            logger.info(f"Created new connection for device {device.id} ({device.ip_address}:{device.port})")
+            return conn
+        else:
+            logger.error(f"Failed to connect to device {device.id} ({device.ip_address}:{device.port})")
+            return None
+    
+    async def disconnect_device(self, device_id: int):
+        """Disconnect from a specific device."""
+        if device_id in self._connections:
+            conn = self._connections[device_id]
+            await conn.disconnect()
+            del self._connections[device_id]
+            logger.info(f"Disconnected from device {device_id}")
+    
+    async def disconnect_all(self):
+        """Disconnect from all devices."""
+        for device_id, conn in list(self._connections.items()):
+            await conn.disconnect()
+        self._connections.clear()
+        logger.info("Disconnected from all devices")
     
     async def test_connection(
+        self,
+        ip_address: str,
+        port: int = 4370,
+        password: Optional[int] = None,
+        timeout: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Test connection to device using ZKTeco protocol (not just TCP).
+        
+        This performs a full protocol handshake, not just a TCP socket test.
+        This is more accurate than basic TCP connection testing.
+        
+        Args:
+            ip_address: Device IP address
+            port: Device port (default: 4370)
+            password: Device communication password (optional)
+            timeout: Connection timeout in seconds (uses config default if not provided)
+        
+        Returns:
+            Dictionary with connection test results:
+            - success: bool
+            - message: str
+            - response_time_ms: int (optional)
+            - device_info: dict (optional, if connection successful)
+        """
+        import time
+        
+        start_time = time.time()
+        timeout = timeout or settings.DEFAULT_DEVICE_TIMEOUT
+        
+        try:
+            conn = ZKDeviceConnection(
+                ip=ip_address,
+                port=port,
+                password=password,
+                timeout=timeout,
+            )
+            
+            # Try to connect
+            if await conn.connect():
+                end_time = time.time()
+                response_time = int((end_time - start_time) * 1000)
+                
+                # Try to get basic device info to verify connection
+                device_info = {}
+                try:
+                    serial = await conn.get_serial_number()
+                    if serial:
+                        device_info["serial_number"] = serial
+                    
+                    name = await conn.get_device_name()
+                    if name:
+                        device_info["device_name"] = name
+                except Exception as e:
+                    logger.warning(f"Could not get device info during connection test: {e}")
+                
+                await conn.disconnect()
+                
+                return {
+                    "success": True,
+                    "message": "Connection successful - Device is ZKTeco-compatible",
+                    "response_time_ms": response_time,
+                    "device_info": device_info if device_info else None,
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": "Connection failed - Could not establish ZKTeco protocol connection",
+                    "response_time_ms": int((time.time() - start_time) * 1000),
+                }
+                
+        except Exception as e:
+            error_msg = str(e)
+            response_time = int((time.time() - start_time) * 1000)
+            
+            # Provide more specific error messages
+            if "timeout" in error_msg.lower() or "timed out" in error_msg.lower():
+                message = f"Connection timeout after {timeout}s - Device may be offline or unreachable"
+            elif "connection refused" in error_msg.lower():
+                message = "Connection refused - Device may not be listening on specified port"
+            elif "network" in error_msg.lower() or "unreachable" in error_msg.lower():
+                message = "Network error - Device may be unreachable or IP address is incorrect"
+            else:
+                message = f"Connection failed: {error_msg}"
+            
+            logger.error(f"Connection test failed for {ip_address}:{port}: {error_msg}")
+            
+            return {
+                "success": False,
+                "message": message,
+                "response_time_ms": response_time,
+            }
+    
+    async def test_tcp_connection(
         self,
         ip_address: str,
         port: int,
         timeout: int = 5
     ) -> bool:
         """
-        Test basic TCP connection to device.
+        Test basic TCP connection to device (legacy method, kept for compatibility).
+        
+        Note: This only tests TCP connectivity, not ZKTeco protocol.
+        Use test_connection() for full protocol testing.
         
         Args:
             ip_address: Device IP address
@@ -26,7 +200,7 @@ class DeviceConnectionService:
             timeout: Connection timeout in seconds
         
         Returns:
-            True if connection successful, False otherwise
+            True if TCP connection successful, False otherwise
         """
         import asyncio
         

@@ -105,7 +105,7 @@ class DeviceHealthCheckService:
     
     async def check_device(self, device: Device, db: AsyncSession) -> bool:
         """
-        Check connectivity for a single device.
+        Check connectivity for a single device using ZKTeco protocol.
         
         Args:
             device: Device instance to check
@@ -122,20 +122,40 @@ class DeviceHealthCheckService:
                 await self.update_device_status(device.id, is_online, db)
                 return is_online
             
-            # Test TCP connection
-            success = await self.connection_service.test_connection(
+            # Test connection using ZKTeco protocol
+            # test_connection returns a dict with 'success' key
+            password = int(device.com_password) if device.com_password else None
+            result = await self.connection_service.test_connection(
                 ip_address=device.ip_address,
                 port=device.port,
+                password=password,
                 timeout=settings.DEFAULT_DEVICE_TIMEOUT
             )
             
-            await self.update_device_status(device.id, success, db)
-            return success
+            # Extract success boolean from result dict
+            is_online = result.get("success", False)
+            
+            # Log result for debugging
+            if is_online:
+                logger.debug(
+                    f"Device {device.id} ({device.ip_address}:{device.port}) is ONLINE - "
+                    f"Response time: {result.get('response_time_ms', 0)}ms"
+                )
+            else:
+                logger.debug(
+                    f"Device {device.id} ({device.ip_address}:{device.port}) is OFFLINE - "
+                    f"Reason: {result.get('message', 'Unknown error')}"
+                )
+            
+            await self.update_device_status(device.id, is_online, db)
+            return is_online
             
         except Exception as e:
             logger.error(
-                f"Error checking device {device.id} ({device.ip_address}:{device.port}): {e}"
+                f"Error checking device {device.id} ({device.ip_address}:{device.port}): {e}",
+                exc_info=True
             )
+            # Mark device as offline if there was an error checking it
             await self.update_device_status(device.id, False, db)
             return False
     

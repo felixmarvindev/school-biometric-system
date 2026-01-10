@@ -20,13 +20,15 @@ Implement functionality to fetch device capacity (max_users) directly from a rea
 
 ## Acceptance Criteria
 
-- [ ] Can fetch device capacity (max_users) from real device using CMD_GET_FREE_SIZES
-- [ ] Capacity is returned in API response
-- [ ] Capacity is stored in device.max_users field in database
-- [ ] Existing `refresh_device_capacity` endpoint uses real device data
-- [ ] Error handling for devices that don't support capacity queries
-- [ ] Capacity is displayed in UI
-- [ ] Capacity refresh works from device detail page
+- [x] Can fetch device capacity (max_users) from real device using read_sizes() (CMD_GET_FREE_SIZES) ✅
+- [x] Capacity is returned in API response (DeviceInfoResponse with capacity dict) ✅
+- [x] Capacity is stored in device.max_users field in database (via refresh endpoint) ✅
+- [x] Existing `refresh_device_capacity` endpoint uses real device data ✅
+- [x] Error handling for devices that don't support capacity queries ✅
+- [x] Capacity information includes users_cap, fingers_cap, rec_cap, and available slots ✅
+- [x] Capacity refresh works via `/info/refresh` endpoint ✅
+- [ ] Capacity is displayed in UI (Frontend UI pending)
+- [ ] Capacity refresh works from device detail page (Frontend UI pending)
 
 ## Implementation Details
 
