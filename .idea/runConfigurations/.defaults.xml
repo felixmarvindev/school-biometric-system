@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <default>
+    <default-fastapi-configuration>
+      <option name="RELOAD" value="true" />
+      <option name="HOST" value="0.0.0.0" />
+    </default-fastapi-configuration>
+  </default>
+</component>

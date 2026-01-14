@@ -84,7 +84,7 @@ export default function LoginPage() {
       }
       
       // Store token and user info
-      setAuth(tokenResponse.access_token, user)
+      setAuth(tokenResponse.access_token, user, tokenResponse.refresh_token ?? null)
       
       // Redirect to dashboard
       router.push("/dashboard")

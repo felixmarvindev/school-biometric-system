@@ -81,7 +81,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     else:
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+    to_encode.update({"exp": expire, "iat": datetime.utcnow(), "typ": "access"})
     
     encoded_jwt = jwt.encode(
         to_encode,
@@ -90,6 +90,28 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     )
     
     return encoded_jwt
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """
+    Create a JWT refresh token.
+    
+    Refresh tokens are long-lived and intended to be exchanged for new access tokens.
+    """
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+
+    to_encode.update({"exp": expire, "iat": datetime.utcnow(), "typ": "refresh"})
+
+    return jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
 
 
 def decode_access_token(token: str) -> Optional[dict]:
@@ -108,6 +130,24 @@ def decode_access_token(token: str) -> Optional[dict]:
             settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
+        # Ensure this is an access token if typ is present
+        if payload.get("typ") not in (None, "access"):
+            return None
+        return payload
+    except JWTError:
+        return None
+
+
+def decode_refresh_token(token: str) -> Optional[dict]:
+    """Decode and validate a JWT refresh token."""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+        if payload.get("typ") != "refresh":
+            return None
         return payload
     except JWTError:
         return None

@@ -6,7 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from school_service.core.database import get_db
 from school_service.core.config import settings
-from school_service.core.security import create_access_token, decode_access_token
+from pydantic import BaseModel
+
+from school_service.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_access_token,
+    decode_refresh_token,
+)
 from school_service.services.user_service import UserService
 from shared.schemas.user import UserLogin, Token, UserResponse, UserCreate
 
@@ -67,7 +74,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token with user details
+    # Create token pair (access + refresh)
     access_token = create_access_token(
         data={
             "sub": str(user.id),  # 'sub' is standard JWT claim for subject
@@ -78,8 +85,14 @@ async def login(
             "role": user.role,
         }
     )
-    
-    return Token(access_token=access_token, token_type="bearer")
+    refresh_token = create_refresh_token(
+        data={
+            "sub": str(user.id),
+            "school_id": user.school_id,
+        }
+    )
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 @router.post(
@@ -125,7 +138,7 @@ async def login_json(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Create access token with user details
+    # Create token pair (access + refresh)
     access_token = create_access_token(
         data={
             "sub": str(user.id),
@@ -136,8 +149,87 @@ async def login_json(
             "role": user.role,
         }
     )
+    refresh_token = create_refresh_token(
+        data={
+            "sub": str(user.id),
+            "school_id": user.school_id,
+        }
+    )
+
+    return Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh access token",
+    description="""
+    Exchange a refresh token for a new access token (and rotated refresh token).
     
-    return Token(access_token=access_token, token_type="bearer")
+    This enables sliding sessions while the user is active.
+    """,
+    responses={
+        200: {"description": "Token refreshed successfully"},
+        401: {"description": "Invalid or expired refresh token"},
+        403: {"description": "User account inactive"},
+    },
+)
+async def refresh_token(
+    body: RefreshRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    payload = decode_refresh_token(body.refresh_token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id: str | None = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_service = UserService(db)
+    user = await user_service.get_user_by_id(int(user_id))
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+
+    new_access = create_access_token(
+        data={
+            "sub": str(user.id),
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "school_id": user.school_id,
+            "role": user.role,
+        }
+    )
+    new_refresh = create_refresh_token(
+        data={
+            "sub": str(user.id),
+            "school_id": user.school_id,
+        }
+    )
+
+    return Token(access_token=new_access, refresh_token=new_refresh, token_type="bearer")
 
 
 async def get_current_user(

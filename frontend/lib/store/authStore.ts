@@ -13,10 +13,12 @@ import type { UserResponse } from '@/lib/api/auth';
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: UserResponse | null;
   isAuthenticated: boolean;
   hasHydrated: boolean;
-  login: (token: string, user: UserResponse) => void;
+  login: (token: string, user: UserResponse, refreshToken?: string | null) => void;
+  setTokens: (tokens: { accessToken: string; refreshToken?: string | null }) => void;
   logout: () => void;
   setUser: (user: UserResponse) => void;
   setHasHydrated: (hasHydrated: boolean) => void;
@@ -26,21 +28,32 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
+      refreshToken: null,
       user: null,
       isAuthenticated: false,
       hasHydrated: false,
       
-      login: (token: string, user: UserResponse) => {
+      login: (token: string, user: UserResponse, refreshToken?: string | null) => {
         set({
           token,
+          refreshToken: refreshToken ?? null,
           user,
           isAuthenticated: true,
         });
+      },
+
+      setTokens: (tokens: { accessToken: string; refreshToken?: string | null }) => {
+        set((state) => ({
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken ?? state.refreshToken,
+          isAuthenticated: true,
+        }));
       },
       
       logout: () => {
         set({
           token: null,
+          refreshToken: null,
           user: null,
           isAuthenticated: false,
         });
@@ -62,6 +75,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage', // localStorage key
       partialize: (state) => ({
         token: state.token,
+        refreshToken: state.refreshToken,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),

@@ -16,6 +16,57 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { isTokenExpired } from '@/lib/utils/jwt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+const LAST_ACTIVITY_KEY = 'last_activity_at';
+
+function getIdleForMs(): number {
+  if (typeof window === 'undefined') return 0;
+  try {
+    const raw = localStorage.getItem(LAST_ACTIVITY_KEY);
+    const last = raw ? Number(raw) : NaN;
+    const lastActivity = Number.isFinite(last) ? last : Date.now();
+    return Math.max(0, Date.now() - lastActivity);
+  } catch {
+    return 0;
+  }
+}
+
+// Keep in sync with useSessionCheck default
+const DEFAULT_IDLE_TIMEOUT_MS = 300000; // 5 minutes
+
+// Separate axios instance with NO interceptors (avoids refresh recursion)
+const refreshAxios = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+let isRefreshing = false;
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshAccessToken(): Promise<string> {
+  const authStore = useAuthStore.getState();
+  const refreshToken = authStore.refreshToken;
+  if (!refreshToken) {
+    throw new Error('No refresh token');
+  }
+
+  const res = await refreshAxios.post<{
+    access_token: string;
+    refresh_token?: string | null;
+    token_type: string;
+  }>('/api/v1/auth/refresh', { refresh_token: refreshToken });
+
+  if (!res.data?.access_token) {
+    throw new Error('Refresh failed');
+  }
+
+  authStore.setTokens({
+    accessToken: res.data.access_token,
+    refreshToken: res.data.refresh_token ?? refreshToken,
+  });
+
+  return res.data.access_token;
+}
 
 // Set axios default base URL (used by all axios requests)
 axios.defaults.baseURL = API_BASE_URL;
@@ -54,7 +105,7 @@ function handleSessionExpiration(message: string = 'Your session has expired. Pl
  * This applies to all axios requests made anywhere in the app.
  */
 axios.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     // Only run on client side
     if (typeof window === 'undefined') {
       return config;
@@ -67,9 +118,30 @@ axios.interceptors.request.use(
     if (token) {
       // Check token expiration (with 5 second buffer to account for network delay)
       if (isTokenExpired(token, 5)) {
-        // Token is expired, trigger logout
-        handleSessionExpiration('Your session has expired. Please log in again.');
-        // Cancel the request
+        // Token is expired. If user is active, auto-refresh; if idle, logout.
+        const idleForMs = getIdleForMs();
+        if (idleForMs < DEFAULT_IDLE_TIMEOUT_MS && authStore.refreshToken) {
+          try {
+            if (!isRefreshing) {
+              isRefreshing = true;
+              refreshPromise = refreshAccessToken().finally(() => {
+                isRefreshing = false;
+                refreshPromise = null;
+              });
+            }
+            const newToken = await (refreshPromise ?? refreshAccessToken());
+            config.headers.Authorization = `Bearer ${newToken}`;
+            return config;
+          } catch {
+            // Fall through to logout handling below
+          }
+        }
+
+        if (idleForMs >= DEFAULT_IDLE_TIMEOUT_MS) {
+          handleSessionExpiration('Your session has expired. Please log in again.');
+        }
+
+        // Cancel the request (expired token cannot succeed)
         return Promise.reject(new Error('Token expired'));
       }
 
@@ -95,7 +167,7 @@ axios.interceptors.response.use(
     // Successful response, return as-is
     return response;
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     // Only run on client side
     if (typeof window === 'undefined') {
       return Promise.reject(error);
@@ -106,7 +178,34 @@ axios.interceptors.response.use(
       // Only handle 401 if it's not from the login endpoint (to avoid logout loop)
       const url = error.config?.url || '';
       if (!url.includes('/auth/login')) {
-        handleSessionExpiration('Your session has expired. Please log in again.');
+        const idleForMs = getIdleForMs();
+        const authStore = useAuthStore.getState();
+
+        // Try auto-refresh once if user is active and we have refresh token
+        const originalConfig = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        if (!originalConfig._retry && idleForMs < DEFAULT_IDLE_TIMEOUT_MS && authStore.refreshToken) {
+          originalConfig._retry = true;
+          try {
+            if (!isRefreshing) {
+              isRefreshing = true;
+              refreshPromise = refreshAccessToken().finally(() => {
+                isRefreshing = false;
+                refreshPromise = null;
+              });
+            }
+            const newToken = await (refreshPromise ?? refreshAccessToken());
+            originalConfig.headers = originalConfig.headers || {};
+            originalConfig.headers.Authorization = `Bearer ${newToken}`;
+            return axios.request(originalConfig);
+          } catch {
+            // If refresh fails, fall back to logout rules below
+          }
+        }
+
+        // If user is idle (or refresh isn't possible), logout
+        if (idleForMs >= DEFAULT_IDLE_TIMEOUT_MS) {
+          handleSessionExpiration('Your session has expired. Please log in again.');
+        }
       }
       return Promise.reject(error);
     }

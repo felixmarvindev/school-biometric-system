@@ -35,6 +35,18 @@ interface UseSessionCheckOptions {
    * Default: true
    */
   showWarning?: boolean;
+
+  /**
+   * Only auto-logout after this period of inactivity (in milliseconds).
+   * Default: 300000 (5 minutes)
+   */
+  idleTimeoutMs?: number;
+
+  /**
+   * How often to record activity (in milliseconds). Prevents excessive writes.
+   * Default: 1000 (1 second)
+   */
+  activityThrottleMs?: number;
 }
 
 /**
@@ -61,9 +73,14 @@ export function useSessionCheck(options: UseSessionCheckOptions = {}): void {
     warningBufferSeconds = 300, // 5 minutes warning
     logoutBufferSeconds = 0, // No buffer for logout (expire exactly at expiration)
     showWarning = true,
+    idleTimeoutMs = 300000, // 5 minutes idle before auto logout
+    activityThrottleMs = 1000,
   } = options;
 
   const warningShownRef = useRef(false);
+  const expiredToastShownRef = useRef(false);
+  const lastActivityRef = useRef<number>(Date.now());
+  const lastActivityWriteRef = useRef<number>(0);
   const { token, isAuthenticated, logout } = useAuthStore();
 
   useEffect(() => {
@@ -71,6 +88,50 @@ export function useSessionCheck(options: UseSessionCheckOptions = {}): void {
     if (typeof window === 'undefined' || !isAuthenticated || !token) {
       return;
     }
+
+    const ACTIVITY_KEY = 'last_activity_at';
+
+    const recordActivity = () => {
+      const now = Date.now();
+      lastActivityRef.current = now;
+
+      // Throttle localStorage writes
+      if (now - lastActivityWriteRef.current < activityThrottleMs) {
+        return;
+      }
+      lastActivityWriteRef.current = now;
+
+      try {
+        localStorage.setItem(ACTIVITY_KEY, String(now));
+      } catch {
+        // Ignore storage errors (private mode, quota, etc.)
+      }
+    };
+
+    const readLastActivity = (): number => {
+      try {
+        const raw = localStorage.getItem(ACTIVITY_KEY);
+        const parsed = raw ? Number(raw) : NaN;
+        if (!Number.isFinite(parsed)) {
+          return lastActivityRef.current;
+        }
+        return parsed;
+      } catch {
+        return lastActivityRef.current;
+      }
+    };
+
+    // Initialize activity timestamp + attach listeners
+    recordActivity();
+    const activityEvents: Array<keyof WindowEventMap> = [
+      'mousemove',
+      'mousedown',
+      'keydown',
+      'scroll',
+      'touchstart',
+      'click',
+    ];
+    activityEvents.forEach((evt) => window.addEventListener(evt, recordActivity, { passive: true }));
 
     // Check token expiration immediately
     const checkTokenExpiration = () => {
@@ -80,16 +141,26 @@ export function useSessionCheck(options: UseSessionCheckOptions = {}): void {
 
       // Check if token is expired (or will expire within logout buffer)
       if (isTokenExpired(token, logoutBufferSeconds)) {
-        // Token expired, logout immediately
-        logout();
-        
-        // Show expiration message
-        toast.error('Your session has expired. Please log in again.', {
-          duration: 5000,
-        });
-        
-        // Redirect to login
-        router.push('/login');
+        const now = Date.now();
+        const lastActivity = readLastActivity();
+        const idleForMs = Math.max(0, now - lastActivity);
+
+        // Only auto-logout after idle timeout
+        if (idleForMs >= idleTimeoutMs) {
+          logout();
+          toast.error('Your session has expired. Please log in again.', { duration: 5000 });
+          router.push('/login');
+          return;
+        }
+
+        // Token is expired but user is active; warn once and wait for inactivity
+        if (!expiredToastShownRef.current) {
+          expiredToastShownRef.current = true;
+          toast.warning(
+            'Your session has expired. You will be logged out after a period of inactivity.',
+            { duration: 8000 }
+          );
+        }
         return;
       }
 
@@ -118,6 +189,7 @@ export function useSessionCheck(options: UseSessionCheckOptions = {}): void {
     // Cleanup on unmount
     return () => {
       clearInterval(intervalId);
+      activityEvents.forEach((evt) => window.removeEventListener(evt, recordActivity));
     };
   }, [
     token,
@@ -128,12 +200,15 @@ export function useSessionCheck(options: UseSessionCheckOptions = {}): void {
     warningBufferSeconds,
     logoutBufferSeconds,
     showWarning,
+    idleTimeoutMs,
+    activityThrottleMs,
   ]);
 
   // Reset warning flag when token changes (new login)
   useEffect(() => {
     if (token) {
       warningShownRef.current = false;
+      expiredToastShownRef.current = false;
     }
   }, [token]);
 }
