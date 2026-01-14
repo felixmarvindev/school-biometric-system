@@ -1,9 +1,10 @@
 """HTTP Proxy Service for API Gateway routing."""
 
+import logging
+from typing import Optional
+
 import httpx
 from fastapi import Request, Response, HTTPException, status
-from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 

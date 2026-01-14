@@ -140,7 +140,7 @@ export default function DevicesPage() {
             onPageChange={setPage}
             onAddDevice={() => router.push("/dashboard/devices/new")}
             onManageGroups={() => router.push("/dashboard/device-groups")}
-            onDeviceClick={(id) => router.push(`/dashboard/devices/${id}/edit`)}
+            onDeviceClick={(id) => router.push(`/dashboard/devices/${id}`)}
             onTestConnection={handleTestConnection}
             isTestingConnection={isTestingConnection}
             deviceGroups={deviceGroups}

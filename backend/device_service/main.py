@@ -27,17 +27,19 @@ from fastapi.responses import RedirectResponse
 from device_service.core.database import AsyncSessionLocal
 from device_service.api.routes import devices_router, device_groups_router, websocket_router
 from device_service.services.device_health_check import DeviceHealthCheckService
+from device_service.services.device_info_sync import DeviceInfoSyncService
 
 logger = logging.getLogger(__name__)
 
-# Global health check service instance
+# Global service instances
 health_check_service: DeviceHealthCheckService | None = None
+info_sync_service: DeviceInfoSyncService | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
-    global health_check_service
+    global health_check_service, info_sync_service
     
     # Startup
     logger.info("Starting Device Service...")
@@ -50,10 +52,26 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to start health check service: {e}", exc_info=True)
     
+    # Start device info sync service (fetches device info every minute)
+    try:
+        info_sync_service = DeviceInfoSyncService()
+        await info_sync_service.start()
+        logger.info("Device info sync service started")
+    except Exception as e:
+        logger.error(f"Failed to start device info sync service: {e}", exc_info=True)
+    
     yield
     
     # Shutdown
     logger.info("Shutting down Device Service...")
+    
+    # Stop device info sync service
+    if info_sync_service:
+        try:
+            await info_sync_service.stop()
+            logger.info("Device info sync service stopped")
+        except Exception as e:
+            logger.error(f"Error stopping device info sync service: {e}", exc_info=True)
     
     # Stop health check service
     if health_check_service:

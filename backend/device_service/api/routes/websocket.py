@@ -32,6 +32,8 @@ async def device_status_websocket(
     Messages sent to client:
     - {"type": "connected", "message": "...", "school_id": 1}
     - {"type": "device_status_update", "device_id": 1, "status": "online", "last_seen": "...", "timestamp": "..."}
+    - {"type": "device_info_update", "device_id": 1, "info": {...}, "timestamp": "..."}
+      Where "info" contains: serial_number, device_name, firmware_version, device_time, capacity
     
     Example connection:
         ws://localhost:8002/ws/device-status?token=<jwt_token>

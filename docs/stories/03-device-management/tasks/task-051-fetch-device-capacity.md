@@ -27,8 +27,8 @@ Implement functionality to fetch device capacity (max_users) directly from a rea
 - [x] Error handling for devices that don't support capacity queries ✅
 - [x] Capacity information includes users_cap, fingers_cap, rec_cap, and available slots ✅
 - [x] Capacity refresh works via `/info/refresh` endpoint ✅
-- [ ] Capacity is displayed in UI (Frontend UI pending)
-- [ ] Capacity refresh works from device detail page (Frontend UI pending)
+- [x] Capacity is displayed in UI (Device detail page) ✅
+- [x] Capacity refresh works from device detail page ✅
 
 ## Implementation Details
 

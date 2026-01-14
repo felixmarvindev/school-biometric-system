@@ -1,6 +1,5 @@
 """Proxy routes for API Gateway."""
 
-from fastapi import APIRouter, Request, Depends
 from typing import Any
 
 from api_gateway.core.config import settings
@@ -10,6 +9,7 @@ from api_gateway.services.proxy_service import (
     get_attendance_service_proxy,
     get_notification_service_proxy,
 )
+from fastapi import APIRouter, Request, Depends
 
 router = APIRouter()
 

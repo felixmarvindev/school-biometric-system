@@ -1,7 +1,7 @@
 """Service for broadcasting device status updates via WebSocket."""
 
 import logging
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, Any
 from datetime import datetime
 from fastapi import WebSocket
 from collections import defaultdict
@@ -101,6 +101,51 @@ class DeviceStatusBroadcaster:
         logger.debug(
             f"Broadcast device status update: school={school_id}, "
             f"device={device_id}, status={status} "
+            f"(sent to {len(self._connections[school_id]) - len(disconnected)} clients)"
+        )
+    
+    async def broadcast_device_info(
+        self,
+        school_id: int,
+        device_id: int,
+        device_info: Dict[str, Any],
+    ):
+        """
+        Broadcast device information update to all connected clients for a school.
+        
+        Args:
+            school_id: School ID
+            device_id: Device ID
+            device_info: Dictionary containing device information (serial, model, firmware, time, capacity)
+        """
+        if school_id not in self._connections:
+            return  # No connected clients for this school
+        
+        message = {
+            "type": "device_info_update",
+            "device_id": device_id,
+            "info": device_info,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+        
+        # Collect disconnected websockets to remove
+        disconnected: Set[WebSocket] = set()
+        
+        # Send to all connected clients for this school
+        for websocket in self._connections[school_id]:
+            try:
+                await websocket.send_json(message)
+            except Exception as e:
+                logger.warning(f"Error sending WebSocket device info message: {e}")
+                disconnected.add(websocket)
+        
+        # Clean up disconnected clients
+        for ws in disconnected:
+            self.disconnect(ws, school_id)
+        
+        logger.debug(
+            f"Broadcast device info update: school={school_id}, "
+            f"device={device_id} "
             f"(sent to {len(self._connections[school_id]) - len(disconnected)} clients)"
         )
     

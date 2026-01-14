@@ -1,7 +1,7 @@
 """API Gateway - Main FastAPI application."""
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
 # Add backend directory to Python path for imports
@@ -13,8 +13,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from api_gateway.core.config import settings
-from api_gateway.api.routes import proxy
+from core.config import settings
+from api.routes import proxy
 
 # Configure logging
 logging.basicConfig(
@@ -61,7 +61,7 @@ async def shutdown_event():
     """Cleanup on shutdown."""
     logger.info("Shutting down API Gateway...")
     # Close proxy clients
-    from api_gateway.services.proxy_service import (
+    from services.proxy_service import (
         _school_service_proxy,
         _device_service_proxy,
         _attendance_service_proxy,

@@ -25,7 +25,7 @@ Implement functionality to fetch device model name and firmware version directly
 - [x] Model and firmware are returned in API response (DeviceInfoResponse) ✅
 - [x] Error handling for devices that don't support these queries ✅
 - [x] Device model and firmware available via device info endpoint (`GET /api/v1/devices/{device_id}/info`) ✅
-- [ ] Model and firmware displayed in UI (Frontend UI pending)
+- [x] Model and firmware displayed in UI (Device detail page) ✅
 - [ ] Device model and firmware stored in database (Optional - currently fetched on-demand)
 
 ## Implementation Details

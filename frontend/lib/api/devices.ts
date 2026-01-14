@@ -581,6 +581,53 @@ export interface DeviceCapacity {
 }
 
 /**
+ * Device capacity details from device info endpoint.
+ */
+export interface DeviceCapacityDetails {
+  users?: number;
+  fingers?: number;
+  records?: number;
+  cards?: number;
+  faces?: number;
+  users_cap?: number;
+  fingers_cap?: number;
+  rec_cap?: number;
+  faces_cap?: number;
+  users_av?: number;
+  fingers_av?: number;
+  rec_av?: number;
+}
+
+/**
+ * Device information response from the API.
+ */
+export interface DeviceInfoResponse {
+  device_id: number;
+  serial_number: string | null;
+  device_name: string | null;
+  firmware_version: string | null;
+  device_time: string | null; // ISO datetime string
+  capacity: DeviceCapacityDetails | null;
+}
+
+/**
+ * Device time response from the API.
+ */
+export interface DeviceTimeResponse {
+  device_time: string; // ISO datetime string
+  server_time: string; // ISO datetime string
+  time_difference_seconds: number;
+}
+
+/**
+ * Device serial number response from the API.
+ */
+export interface DeviceSerialResponse {
+  serial_number: string;
+  device_id: number;
+}
+
+/**
  * Get device capacity information.
  * 
  * @param token - JWT authentication token
@@ -624,7 +671,7 @@ export async function getDeviceCapacity(
       }
 
       throw new DeviceApiError(
-        errorData?.detail || 'Failed to get device capacity',
+        errorData?.detail?.toString() || 'Failed to get device capacity',
         statusCode
       );
     }
@@ -689,7 +736,7 @@ export async function refreshDeviceCapacity(
       }
 
       throw new DeviceApiError(
-        errorData?.detail || 'Failed to refresh device capacity',
+        errorData?.detail?.toString() || 'Failed to refresh device capacity',
         statusCode
       );
     }
@@ -765,3 +812,208 @@ export async function testDeviceConnectionByAddress(
   }
 }
 
+/**
+ * Get device information (serial, model, firmware, time, capacity).
+ * 
+ * @param token - JWT authentication token
+ * @param deviceId - Device ID
+ * @returns Promise resolving to device information
+ * @throws DeviceApiError if request fails
+ */
+export async function getDeviceInfo(
+  token: string,
+  deviceId: number
+): Promise<DeviceInfoResponse> {
+  try {
+    const response = await axios.get<DeviceInfoResponse>(
+      `${API_BASE_URL}/api/v1/devices/${deviceId}/info`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401) {
+        throw new DeviceApiError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new DeviceApiError('Device not found', statusCode);
+      }
+
+      if (statusCode === 503) {
+        throw new DeviceApiError(
+          errorData?.detail.toString() || 'Device is offline or does not support information retrieval',
+          statusCode
+        );
+      }
+
+      throw new DeviceApiError(
+        errorData?.detail?.toString() || 'Failed to get device information',
+        statusCode
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof DeviceApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new DeviceApiError(
+        error.message || 'Failed to get device information',
+        error.response?.status || 500
+      );
+    }
+    throw new DeviceApiError('An unexpected error occurred', 500);
+  }
+}
+
+/**
+ * Get device time.
+ * 
+ * @param token - JWT authentication token
+ * @param deviceId - Device ID
+ * @returns Promise resolving to device time information
+ * @throws DeviceApiError if request fails
+ */
+export async function getDeviceTime(
+  token: string,
+  deviceId: number
+): Promise<DeviceTimeResponse> {
+  try {
+    const response = await axios.get<DeviceTimeResponse>(
+      `${API_BASE_URL}/api/v1/devices/${deviceId}/time`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401) {
+        throw new DeviceApiError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new DeviceApiError('Device not found', statusCode);
+      }
+
+      if (statusCode === 503) {
+        throw new DeviceApiError(
+          errorData?.detail?.toString() || 'Device is offline or does not support time retrieval',
+          statusCode
+        );
+      }
+
+      throw new DeviceApiError(
+        errorData?.detail?.toString() || 'Failed to get device time',
+        statusCode
+      );
+    }
+
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof DeviceApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new DeviceApiError(
+        error.message || 'Failed to get device time',
+        error.response?.status || 500
+      );
+    }
+    throw new DeviceApiError('An unexpected error occurred', 500);
+  }
+}
+
+/**
+ * Refresh all device information from the real device.
+ * 
+ * This fetches serial number, model, firmware, time, and capacity from the device
+ * and updates the database with available information.
+ * 
+ * @param token - JWT authentication token
+ * @param deviceId - Device ID
+ * @returns Promise resolving to refreshed device information
+ * @throws DeviceApiError if request fails
+ */
+export async function refreshDeviceInfo(
+  token: string,
+  deviceId: number
+): Promise<DeviceInfoResponse> {
+  try {
+    const response = await axios.post<DeviceInfoResponse>(
+      `${API_BASE_URL}/api/v1/devices/${deviceId}/info/refresh`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        validateStatus: (status) => status < 500,
+      }
+    );
+
+    if (response.status >= 400) {
+      const errorData = response.data as unknown as ApiError | undefined;
+      const statusCode = response.status;
+
+      if (statusCode === 401) {
+        throw new DeviceApiError(
+          'Authentication required. Please log in and try again.',
+          statusCode
+        );
+      }
+
+      if (statusCode === 404) {
+        throw new DeviceApiError('Device not found', statusCode);
+      }
+
+      if (statusCode === 503) {
+        throw new DeviceApiError(
+          errorData?.detail?.toString() || 'Device is offline or does not support information retrieval',
+          statusCode
+        );
+      }
+
+      throw new DeviceApiError(
+        errorData?.detail?.toString() || 'Failed to refresh device information',
+        statusCode
+      );
+    }
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof DeviceApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error)) {
+      throw new DeviceApiError(
+        error.message || 'Failed to refresh device information',
+        error.response?.status || 500
+      );
+    }
+    throw new DeviceApiError('An unexpected error occurred', 500);
+  }
+}

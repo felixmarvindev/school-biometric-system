@@ -20,14 +20,15 @@ Create a comprehensive endpoint and UI feature to refresh all device information
 
 ## Acceptance Criteria
 
-- [ ] Endpoint to refresh all device info: `POST /api/v1/devices/{device_id}/refresh-info`
-- [ ] Endpoint fetches all device information from real device
-- [ ] Endpoint updates device record in database with fetched info
-- [ ] "Refresh Device Info" button in device detail page
-- [ ] Loading state during refresh
-- [ ] Success/error feedback to user
-- [ ] Updated info displayed in UI after refresh
-- [ ] Partial updates handled (if some info unavailable)
+- [x] Endpoint to refresh all device info: `POST /api/v1/devices/{device_id}/info/refresh` ✅
+- [x] Endpoint fetches all device information from real device ✅
+- [x] Endpoint updates device record in database with fetched info ✅
+- [x] API client function `refreshDeviceInfo()` added ✅
+- [x] "Refresh Device Info" button in device detail page ✅
+- [x] Loading state during refresh ✅
+- [x] Success/error feedback to user (toast notifications) ✅
+- [x] Updated info displayed after refresh ✅
+- [x] Partial updates handled (if some info unavailable) ✅
 
 ## Implementation Details
 
@@ -195,15 +196,15 @@ const handleRefreshInfo = async () => {
 
 ## Definition of Done
 
-- [x] Refresh endpoint created and working
-- [x] Endpoint updates all device info in database
-- [x] "Refresh Device Info" button in UI
-- [x] Loading state implemented
-- [x] Success/error feedback shown
-- [x] Updated info displayed after refresh
-- [x] Partial updates handled
-- [x] Error handling implemented
-- [x] Tests passing
+- [x] Refresh endpoint created and working ✅
+- [x] Endpoint updates all device info in database ✅
+- [x] API client function added (`refreshDeviceInfo`) ✅
+- [x] Partial updates handled ✅
+- [x] Error handling implemented ✅
+- [x] "Refresh Device Info" button in UI ✅
+- [x] Loading state implemented ✅
+- [x] Success/error feedback shown (toast notifications) ✅
+- [x] Updated info displayed after refresh ✅
 
 ## Notes
 

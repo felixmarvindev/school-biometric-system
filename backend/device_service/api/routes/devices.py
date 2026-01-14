@@ -8,7 +8,7 @@ import math
 from device_service.core.database import get_db
 from device_service.services.device_service import DeviceService
 from device_service.services.device_capacity import DeviceCapacityService
-from device_service.api.dependencies import get_current_user
+from device_service.api.dependencies import get_current_user, logger
 from shared.schemas.device import (
     DeviceCreate,
     DeviceUpdate,
@@ -589,7 +589,7 @@ async def get_device_info(
             )
         )
     
-    return DeviceInfoResponse(
+    response = DeviceInfoResponse(
         serial_number=info.get("serial_number"),
         device_name=info.get("device_name"),
         firmware_version=info.get("firmware_version"),
@@ -597,6 +597,28 @@ async def get_device_info(
         capacity=info.get("capacity"),
         device_id=device_id,
     )
+    
+    # Broadcast device info update via WebSocket (for real-time UI updates)
+    # This allows other users viewing the same device to see updates automatically
+    try:
+        from device_service.services.device_status_broadcaster import broadcaster
+        await broadcaster.broadcast_device_info(
+            school_id=current_user.school_id,
+            device_id=device_id,
+            device_info={
+                "serial_number": info.get("serial_number"),
+                "device_name": info.get("device_name"),
+                "firmware_version": info.get("firmware_version"),
+                "device_time": info.get("device_time"),
+                "capacity": info.get("capacity"),
+            }
+        )
+        logger.debug(f"Broadcasted device info for device {device_id} via WebSocket")
+    except Exception as e:
+        # Don't fail the request if WebSocket broadcast fails
+        logger.debug(f"Failed to broadcast device info via WebSocket (non-critical): {e}")
+    
+    return response
 
 
 @router.get(
@@ -792,7 +814,8 @@ async def refresh_device_info(
             )
         )
     
-    return DeviceInfoResponse(
+    # Prepare response
+    response = DeviceInfoResponse(
         serial_number=info.get("serial_number"),
         device_name=info.get("device_name"),
         firmware_version=info.get("firmware_version"),
@@ -800,6 +823,27 @@ async def refresh_device_info(
         capacity=info.get("capacity"),
         device_id=device_id,
     )
+    
+    # Broadcast device info update via WebSocket
+    try:
+        from device_service.services.device_status_broadcaster import broadcaster
+        await broadcaster.broadcast_device_info(
+            school_id=current_user.school_id,
+            device_id=device_id,
+            device_info={
+                "serial_number": info.get("serial_number"),
+                "device_name": info.get("device_name"),
+                "firmware_version": info.get("firmware_version"),
+                "device_time": info.get("device_time"),
+                "capacity": info.get("capacity"),
+            }
+        )
+        logger.debug(f"Broadcasted device info update for device {device_id} via WebSocket")
+    except Exception as e:
+        # Don't fail the request if WebSocket broadcast fails
+        logger.warning(f"Failed to broadcast device info update via WebSocket: {e}")
+    
+    return response
 
 
 @router.get(

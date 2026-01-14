@@ -10,18 +10,40 @@ import { useAuthStore } from "@/lib/store/authStore"
 import { type DeviceStatus } from "@/lib/api/devices"
 
 export interface DeviceStatusUpdate {
-  type: "device_status_update" | "connected" | "pong"
+  type: "device_status_update" | "device_info_update" | "connected" | "pong"
   device_id?: number
   status?: DeviceStatus
   last_seen?: string | null
   timestamp?: string
   message?: string
   school_id?: number
+  info?: {
+    serial_number?: string | null
+    device_name?: string | null
+    firmware_version?: string | null
+    device_time?: string | null
+    capacity?: {
+      users?: number
+      fingers?: number
+      records?: number
+      cards?: number
+      faces?: number
+      users_cap?: number
+      fingers_cap?: number
+      rec_cap?: number
+      faces_cap?: number
+      users_av?: number
+      fingers_av?: number
+      rec_av?: number
+    } | null
+  }
 }
 
 export interface UseDeviceStatusWebSocketOptions {
   /** Callback when device status updates are received */
   onStatusUpdate?: (update: DeviceStatusUpdate) => void
+  /** Callback when device info updates are received */
+  onInfoUpdate?: (update: DeviceStatusUpdate) => void
   /** Callback when connection is established */
   onConnect?: () => void
   /** Callback when connection is lost */
@@ -62,6 +84,7 @@ export function useDeviceStatusWebSocket(
 ): UseDeviceStatusWebSocketReturn {
   const {
     onStatusUpdate,
+    onInfoUpdate,
     onConnect,
     onDisconnect,
     onError,
@@ -82,6 +105,7 @@ export function useDeviceStatusWebSocket(
   
   // Store callbacks in refs to avoid recreating connect function
   const onStatusUpdateRef = useRef(onStatusUpdate)
+  const onInfoUpdateRef = useRef(onInfoUpdate)
   const onConnectRef = useRef(onConnect)
   const onDisconnectRef = useRef(onDisconnect)
   const onErrorRef = useRef(onError)
@@ -93,12 +117,13 @@ export function useDeviceStatusWebSocket(
   // Update refs when callbacks/options change
   useEffect(() => {
     onStatusUpdateRef.current = onStatusUpdate
+    onInfoUpdateRef.current = onInfoUpdate
     onConnectRef.current = onConnect
     onDisconnectRef.current = onDisconnect
     onErrorRef.current = onError
     reconnectDelayRef.current = reconnectDelay
     maxReconnectAttemptsRef.current = maxReconnectAttempts
-  }, [onStatusUpdate, onConnect, onDisconnect, onError, reconnectDelay, maxReconnectAttempts])
+  }, [onStatusUpdate, onInfoUpdate, onConnect, onDisconnect, onError, reconnectDelay, maxReconnectAttempts])
 
   // Handle incoming messages - use ref to avoid recreating
   const handleMessage = useCallback(
@@ -113,6 +138,11 @@ export function useDeviceStatusWebSocket(
           reconnectAttemptsRef.current = 0
           onConnectRef.current?.()
         } else if (data.type === "device_status_update") {
+          onStatusUpdateRef.current?.(data)
+        } else if (data.type === "device_info_update") {
+          // Handle device info updates (serial, capacity, firmware, etc.)
+          onInfoUpdateRef.current?.(data)
+          // Also call onStatusUpdate for backward compatibility
           onStatusUpdateRef.current?.(data)
         } else if (data.type === "pong") {
           // Ping/pong handling if needed
