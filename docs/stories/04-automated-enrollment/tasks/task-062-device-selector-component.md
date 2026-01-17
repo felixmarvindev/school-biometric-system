@@ -26,15 +26,15 @@ Create a device selector component that displays available devices with online/o
 
 ## Acceptance Criteria
 
-1. [ ] Device selector component created
-2. [ ] Device list displays with status indicators (online/offline)
-3. [ ] Can select a device from list
-4. [ ] Selected device is highlighted
-5. [ ] Device details shown (name, location, status)
-6. [ ] Offline devices are clearly marked (or disabled)
-7. [ ] Loading state shown while fetching
-8. [ ] Empty state shown when no devices
-9. [ ] Component is reusable
+1. [x] Device selector component created
+2. [x] Device list displays with status indicators (online/offline)
+3. [x] Can select a device from list
+4. [x] Selected device is highlighted
+5. [x] Device details shown (name, location, status)
+6. [x] Offline devices are clearly marked (or disabled)
+7. [x] Loading state shown while fetching
+8. [x] Empty state shown when no devices
+9. [x] Component is reusable
 
 ## Implementation Details
 
@@ -173,14 +173,14 @@ export function DeviceSelector({ onSelect, selectedDevice }: DeviceSelectorProps
 
 ## Definition of Done
 
-- [ ] Device selector component created
-- [ ] Status indicators work correctly
-- [ ] Selection works correctly
-- [ ] Offline devices handled properly
-- [ ] Loading/empty states handled
-- [ ] Component is reusable
-- [ ] No console errors
-- [ ] Follows design system
+- [x] Device selector component created
+- [x] Status indicators work correctly
+- [x] Selection works correctly
+- [x] Offline devices handled properly
+- [x] Loading/empty states handled
+- [x] Component is reusable
+- [x] No console errors
+- [x] Follows design system
 
 ## Next Task
 

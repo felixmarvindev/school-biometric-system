@@ -26,16 +26,16 @@ Create a student selector component with search functionality that allows admini
 
 ## Acceptance Criteria
 
-1. [ ] Student selector component created
-2. [ ] Search input field works (filters students by name/admission number)
-3. [ ] Student list displays with search results
-4. [ ] Can select a student from list
-5. [ ] Selected student is highlighted/indicated
-6. [ ] Student details shown (name, admission number, class)
-7. [ ] Search is debounced (300ms delay)
-8. [ ] Loading state shown while fetching
-9. [ ] Empty state shown when no results
-10. [ ] Component is reusable
+1. [x] Student selector component created
+2. [x] Search input field works (filters students by name/admission number)
+3. [x] Student list displays with search results
+4. [x] Can select a student from list
+5. [x] Selected student is highlighted/indicated
+6. [x] Student details shown (name, admission number, class)
+7. [x] Search is debounced (300ms delay)
+8. [x] Loading state shown while fetching
+9. [x] Empty state shown when no results
+10. [x] Component is reusable
 
 ## Implementation Details
 
@@ -170,13 +170,13 @@ export function StudentSelector({ onSelect, selectedStudent }: StudentSelectorPr
 
 ## Definition of Done
 
-- [ ] Student selector component created
-- [ ] Search functionality works
-- [ ] Selection works correctly
-- [ ] Loading/empty states handled
-- [ ] Component is reusable
-- [ ] No console errors
-- [ ] Follows design system
+- [x] Student selector component created
+- [x] Search functionality works
+- [x] Selection works correctly
+- [x] Loading/empty states handled
+- [x] Component is reusable
+- [x] No console errors
+- [x] Follows design system
 
 ## Next Task
 

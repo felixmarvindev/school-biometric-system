@@ -1,29 +1,40 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import { fadeInUp } from '@/lib/animations/framer-motion';
 import { EnrollmentWizard } from '@/components/features/enrollment/EnrollmentWizard';
 
 export default function EnrollmentPage() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleStartEnrollment = async (data: {
     studentId: number;
     deviceId: number;
     fingerId: number;
   }) => {
-    setIsSubmitting(true);
-    
-    // TODO: Phase 2 - Call enrollment API
-    console.log('Starting enrollment:', data);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    
-    // TODO: Show success message and redirect or reset
+    try {
+      // TODO: Phase 2 - Call enrollment API
+      console.log('Enrollment completed:', data);
+      
+      // Simulate API call delay (in real implementation, this would be the actual API call)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Show success message
+      toast.success('Enrollment Successful', {
+        description: `Fingerprint has been successfully enrolled. Student ID: ${data.studentId}, Device ID: ${data.deviceId}, Finger: ${data.fingerId}`,
+        duration: 5000,
+      });
+      
+      // In a real implementation, you might want to:
+      // - Refresh student data to show updated enrollment status
+      // - Navigate to a success page
+      // - Show enrollment summary
+    } catch (error) {
+      console.error('Enrollment error:', error);
+      toast.error('Enrollment Failed', {
+        description: error instanceof Error ? error.message : 'An error occurred during enrollment',
+        duration: 5000,
+      });
+    }
   };
 
   return (
@@ -49,10 +60,7 @@ export default function EnrollmentPage() {
             </p>
           </div>
           
-          <EnrollmentWizard
-            onStartEnrollment={handleStartEnrollment}
-            isSubmitting={isSubmitting}
-          />
+          <EnrollmentWizard onStartEnrollment={handleStartEnrollment} />
         </motion.div>
       </div>
     </div>

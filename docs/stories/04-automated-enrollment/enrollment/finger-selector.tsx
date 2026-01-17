@@ -1,15 +1,14 @@
 "use client"
 import { Check, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FINGERS, type FingerInfo } from "@/lib/utils/fingers"
+import { FINGERS, type Student } from "@/lib/demo-data"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
-import type { StudentResponse } from "@/lib/api/students"
 
 interface FingerSelectorProps {
   selectedFinger: number | null
   onSelect: (fingerId: number) => void
-  student?: StudentResponse | null
+  student?: Student | null
 }
 
 // SVG paths for realistic hand illustration
@@ -67,10 +66,10 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
 
   return (
     <div className="flex flex-col items-center">
-      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 capitalize">{hand} Hand</span>
+      <span className="text-sm font-medium text-muted-foreground mb-2 capitalize">{hand} Hand</span>
       <svg viewBox="0 0 300 380" className="w-full max-w-[200px] h-auto">
         {/* Palm */}
-        <path d={paths.palm} className="fill-gray-300 dark:fill-gray-600 transition-colors" />
+        <path d={paths.palm} className="fill-muted/60 transition-colors" />
 
         {/* Fingers */}
         <TooltipProvider delayDuration={0}>
@@ -89,17 +88,17 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
                       className={cn(
                         "transition-all duration-200",
                         isSelected
-                          ? "fill-blue-600 stroke-blue-600 stroke-[3]"
+                          ? "fill-primary stroke-primary stroke-[3]"
                           : isEnrolled
-                            ? "fill-green-500/40 stroke-green-600 stroke-2"
-                            : "fill-gray-300/60 dark:fill-gray-600/60 hover:fill-gray-400 dark:hover:fill-gray-500 stroke-transparent",
+                            ? "fill-success/40 stroke-success stroke-2"
+                            : "fill-muted/60 hover:fill-muted stroke-transparent",
                       )}
                     />
 
                     {/* Selection/Enrolled indicator */}
                     {(isSelected || isEnrolled) && (
                       <g transform={`translate(${finger.cx - 10}, ${finger.cy - 10})`}>
-                        <circle cx="10" cy="10" r="10" className={isSelected ? "fill-blue-600" : "fill-green-600"} />
+                        <circle cx="10" cy="10" r="10" className={isSelected ? "fill-primary" : "fill-success"} />
                         <Check className="text-white" x="3" y="3" width="14" height="14" />
                       </g>
                     )}
@@ -107,7 +106,7 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
                     {/* Recommended indicator */}
                     {isRecommended && !isSelected && !isEnrolled && (
                       <g transform={`translate(${finger.cx - 8}, ${finger.cy - 8})`}>
-                        <circle cx="8" cy="8" r="8" className="fill-yellow-500" />
+                        <circle cx="8" cy="8" r="8" className="fill-warning" />
                         <Star
                           className="text-warning-foreground"
                           x="2"
@@ -128,7 +127,7 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
                         Recommended
                       </Badge>
                     )}
-                    {isEnrolled && <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-0 text-xs">Enrolled</Badge>}
+                    {isEnrolled && <Badge className="bg-success/10 text-success border-0 text-xs">Enrolled</Badge>}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -141,32 +140,31 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
 }
 
 export function FingerSelector({ selectedFinger, onSelect, student }: FingerSelectorProps) {
-  // TODO: Get enrolled fingers from student when API is ready
-  const enrolledFingers: number[] = []
+  const enrolledFingers = student?.enrolledFingers || []
   const selectedFingerInfo = FINGERS.find((f) => f.id === selectedFinger)
 
   return (
     <div className="space-y-6">
       {/* Instructions */}
       <div className="text-center">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Click on a finger to select it for enrollment.
           <span className="inline-flex items-center gap-1 ml-1">
-            <Star className="size-3 text-yellow-500" fill="currentColor" />
+            <Star className="size-3 text-warning" fill="currentColor" />
             indicates recommended finger.
           </span>
         </p>
       </div>
 
       {/* Hand Illustrations */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 p-6 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800/50 dark:via-gray-800/50 dark:to-gray-800/50 rounded-2xl border border-gray-200/50 dark:border-gray-700/50">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 p-6 bg-muted/30 rounded-2xl">
         <HandIllustration
           hand="left"
           selectedFinger={selectedFinger}
           enrolledFingers={enrolledFingers}
           onFingerClick={onSelect}
         />
-        <div className="hidden sm:block w-px h-48 bg-gray-300 dark:bg-gray-700" />
+        <div className="hidden sm:block w-px h-48 bg-border" />
         <HandIllustration
           hand="right"
           selectedFinger={selectedFinger}
@@ -187,10 +185,10 @@ export function FingerSelector({ selectedFinger, onSelect, student }: FingerSele
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                 isSelected
-                  ? "border-blue-600 bg-blue-600 text-white shadow-md scale-105"
+                  ? "border-primary bg-primary text-primary-foreground shadow-md scale-105"
                   : isEnrolled
-                    ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
-                    : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-500/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
+                    ? "border-success/50 bg-success/10 text-success"
+                    : "border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-foreground",
               )}
             >
               {finger.name}

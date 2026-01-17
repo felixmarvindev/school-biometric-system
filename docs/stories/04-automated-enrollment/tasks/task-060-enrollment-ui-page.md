@@ -26,12 +26,12 @@ Create the main enrollment page with routing and basic layout structure. This pr
 
 ## Acceptance Criteria
 
-1. [ ] Enrollment page route exists: `/dashboard/enrollment`
-2. [ ] Page loads without errors
-3. [ ] Basic layout structure in place (header, main content, footer)
-4. [ ] Page is responsive (works on desktop, tablet, mobile)
-5. [ ] Navigation to enrollment page works from dashboard
-6. [ ] Page follows design system (colors, typography, spacing)
+1. [x] Enrollment page route exists: `/dashboard/enrollment`
+2. [x] Page loads without errors
+3. [x] Basic layout structure in place (header, main content, footer)
+4. [x] Page is responsive (works on desktop, tablet, mobile)
+5. [x] Navigation to enrollment page works from dashboard
+6. [x] Page follows design system (colors, typography, spacing)
 
 ## Implementation Details
 
@@ -97,12 +97,12 @@ export default function EnrollmentPage() {
 
 ## Definition of Done
 
-- [ ] Enrollment page created and accessible
-- [ ] Page layout structure in place
-- [ ] Responsive design works
-- [ ] Navigation integrated
-- [ ] No console errors
-- [ ] Follows design system
+- [x] Enrollment page created and accessible
+- [x] Page layout structure in place
+- [x] Responsive design works
+- [x] Navigation integrated
+- [x] No console errors
+- [x] Follows design system
 
 ## Next Task
 
