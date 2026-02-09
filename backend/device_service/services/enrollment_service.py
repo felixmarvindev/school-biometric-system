@@ -1,0 +1,506 @@
+"""Service for managing enrollment operations."""
+
+import uuid
+import logging
+from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
+
+from device_service.models.enrollment import EnrollmentSession, EnrollmentStatus
+from device_service.models.device import Device, DeviceStatus
+from device_service.repositories.enrollment_repository import EnrollmentRepository
+from device_service.repositories.device_repository import DeviceRepository
+from device_service.services.device_connection import DeviceConnectionService
+from device_service.services.enrollment_progress_broadcaster import enrollment_broadcaster
+from device_service.exceptions import (
+    DeviceOfflineError,
+    DeviceNotFoundError,
+    EnrollmentError,
+    EnrollmentInProgressError,
+)
+from shared.schemas.enrollment import EnrollmentSessionCreate, EnrollmentSessionUpdate
+from device_service.zk.enrollment import EnrollmentEvent, EnrollmentProgress
+from device_service.core.encryption import encrypt_template
+
+logger = logging.getLogger(__name__)
+
+# Map EnrollmentEvent to UI status and progress for broadcaster
+_EVENT_TO_UI = {
+    EnrollmentEvent.STARTED: (0, "ready"),
+    EnrollmentEvent.WAITING_FINGER: (0, "placing"),
+    EnrollmentEvent.FINGER_DETECTED: (33, "placing"),
+    EnrollmentEvent.FINGER_PROCESSED: (66, "capturing"),
+    EnrollmentEvent.ATTEMPT_COMPLETED: (66, "processing"),
+    EnrollmentEvent.COMPLETED: (100, "complete"),
+    EnrollmentEvent.DUPLICATE_FINGER: (0, "error"),
+    EnrollmentEvent.TIMEOUT: (0, "error"),
+    EnrollmentEvent.FAILED: (0, "error"),
+    EnrollmentEvent.CANCELLED: (0, "error"),
+}
+
+
+class EnrollmentService:
+    """Service for managing enrollment operations."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.repository = EnrollmentRepository(db)
+        self.device_repository = DeviceRepository(db)
+        self.connection_service = DeviceConnectionService(db)
+
+    async def start_enrollment(
+        self,
+        student_id: int,
+        device_id: int,
+        finger_id: int,
+        school_id: int,
+    ) -> EnrollmentSession:
+        """
+        Start enrollment on a device.
+        
+        This method:
+        1. Validates device and student exist
+        2. Checks device is online
+        3. Creates enrollment session in database
+        4. Connects to device and sends enrollment command
+        5. Updates session status to IN_PROGRESS
+        
+        Args:
+            student_id: Student ID
+            device_id: Device ID
+            finger_id: Finger ID (0-9)
+            school_id: School ID
+            
+        Returns:
+            EnrollmentSession instance
+            
+        Raises:
+            DeviceNotFoundError: If device not found
+            DeviceOfflineError: If device is offline
+            EnrollmentError: If enrollment fails
+        """
+        # Get device
+        device = await self.device_repository.get_by_id(device_id, school_id)
+        if not device:
+            raise DeviceNotFoundError(device_id)
+        
+        # Check device is online
+        if device.status != DeviceStatus.ONLINE:
+            raise DeviceOfflineError(device_id)
+        
+        # Check for existing in-progress enrollment for this student/device/finger
+        # (Note: We'll add this check later if needed - for now allow multiple)
+        
+        # Create enrollment session
+        session_id = str(uuid.uuid4())
+        enrollment_session = await self.repository.create(
+            EnrollmentSessionCreate(
+                session_id=session_id,
+                student_id=student_id,
+                device_id=device_id,
+                finger_id=finger_id,
+                school_id=school_id,
+                status=EnrollmentStatus.PENDING,
+            )
+        )
+        
+        try:
+            # Get device connection
+            conn = await self.connection_service.get_connection(device)
+            if not conn:
+                raise DeviceOfflineError(device_id)
+
+            # Update session status to IN_PROGRESS before starting
+            enrollment_session.status = EnrollmentStatus.IN_PROGRESS.value
+            await self.db.commit()
+            await self.db.refresh(enrollment_session)
+
+            # Broadcast initial progress (0% - ready)
+            await enrollment_broadcaster.broadcast_progress(
+                school_id=school_id,
+                session_id=session_id,
+                progress=0,
+                status="ready",
+                message="Enrollment started. Place your finger on the scanner.",
+            )
+
+            # Run full enrollment using verified AsyncBiometricEnrollment flow
+            # (aligned with verify_test_2 - emits all progress events)
+            import asyncio
+            asyncio.create_task(self._run_enrollment(
+                conn=conn,
+                enrollment_id=enrollment_session.id,
+                session_id=session_id,
+                school_id=school_id,
+                student_id=student_id,
+                finger_id=finger_id,
+            ))
+            
+            logger.info(
+                f"Enrollment started: session={session_id}, "
+                f"student={student_id}, device={device_id}, finger={finger_id}"
+            )
+            
+            return enrollment_session
+            
+        except DeviceOfflineError:
+            # Update session with error
+            await self.repository.update_status(
+                enrollment_session.id,
+                EnrollmentStatus.FAILED,
+                error_message=f"Device {device_id} is offline or unreachable",
+            )
+            raise
+        
+        except EnrollmentError:
+            # Update session with error (already updated in exception)
+            await self.repository.update_status(
+                enrollment_session.id,
+                EnrollmentStatus.FAILED,
+                error_message=f"Failed to start enrollment on device {device_id}",
+            )
+            raise
+        
+        except Exception as e:
+            # Update session with error
+            error_msg = str(e)
+            await self.repository.update_status(
+                enrollment_session.id,
+                EnrollmentStatus.FAILED,
+                error_message=error_msg,
+            )
+            
+            # Broadcast error event
+            await enrollment_broadcaster.broadcast_error(
+                school_id=school_id,
+                session_id=session_id,
+                error_message=error_msg,
+            )
+            
+            logger.error(f"Enrollment failed: session={session_id}, error={e}", exc_info=True)
+            raise EnrollmentError(
+                f"Failed to start enrollment: {error_msg}",
+                code="ENROLLMENT_ERROR"
+            ) from e
+
+    async def cancel_enrollment(
+        self,
+        enrollment_id: int,
+        school_id: int,
+    ) -> EnrollmentSession:
+        """
+        Cancel an ongoing enrollment session.
+        
+        Args:
+            enrollment_id: Enrollment session ID
+            school_id: School ID (for authorization)
+            
+        Returns:
+            Updated EnrollmentSession instance
+            
+        Raises:
+            EnrollmentError: If cancellation fails
+        """
+        # Get enrollment session
+        enrollment_session = await self.repository.get_by_id(enrollment_id, school_id)
+        if not enrollment_session:
+            raise EnrollmentError(
+                f"Enrollment session {enrollment_id} not found",
+                code="ENROLLMENT_NOT_FOUND"
+            )
+        
+        # Check session is in progress
+        if enrollment_session.status != EnrollmentStatus.IN_PROGRESS.value:
+            raise EnrollmentError(
+                f"Enrollment session {enrollment_id} is not in progress",
+                code="ENROLLMENT_NOT_IN_PROGRESS"
+            )
+        
+        try:
+            # Get device
+            device = await self.device_repository.get_by_id(enrollment_session.device_id, school_id)
+            if not device:
+                raise DeviceNotFoundError(enrollment_session.device_id)
+            
+            # Get device connection
+            conn = await self.connection_service.get_connection(device)
+            if conn:
+                # Send cancel command to device
+                await conn.cancel_enrollment()
+            
+            # Update session status
+            enrollment_session.status = EnrollmentStatus.CANCELLED.value
+            await self.db.commit()
+            await self.db.refresh(enrollment_session)
+
+            # Broadcast cancellation so frontend receives update
+            await enrollment_broadcaster.broadcast_cancelled(
+                school_id=school_id,
+                session_id=enrollment_session.session_id,
+                message="Enrollment cancelled",
+            )
+            
+            logger.info(f"Enrollment cancelled: session={enrollment_session.session_id}")
+            
+            return enrollment_session
+            
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"Enrollment cancellation failed: session={enrollment_session.session_id}, error={e}", exc_info=True)
+            raise EnrollmentError(
+                f"Failed to cancel enrollment: {error_msg}",
+                code="ENROLLMENT_CANCELLATION_ERROR"
+            ) from e
+
+    async def get_enrolled_fingers(
+        self,
+        device_id: int,
+        student_id: int,
+        school_id: int,
+    ) -> list[int]:
+        """
+        Get list of finger IDs (0-9) enrolled for this student on the device.
+        Uses device when online; falls back to database when device is offline.
+        """
+        device = await self.device_repository.get_by_id(device_id, school_id)
+        if not device:
+            raise DeviceNotFoundError(device_id)
+
+        if device.status == DeviceStatus.ONLINE:
+            conn = await self.connection_service.get_connection(device)
+            if conn:
+                return await conn.get_enrolled_finger_ids(str(student_id))
+
+        return await self.repository.get_enrolled_fingers_from_db(
+            school_id, student_id, device_id
+        )
+
+    async def delete_fingerprint(
+        self,
+        device_id: int,
+        student_id: int,
+        finger_id: int,
+        school_id: int,
+    ) -> None:
+        """
+        Delete the fingerprint template for the given student and finger on the device.
+        """
+        device = await self.device_repository.get_by_id(device_id, school_id)
+        if not device:
+            raise DeviceNotFoundError(device_id)
+        if device.status != DeviceStatus.ONLINE:
+            raise DeviceOfflineError(device_id)
+
+        conn = await self.connection_service.get_connection(device)
+        if not conn:
+            raise DeviceOfflineError(device_id)
+
+        success = await conn.delete_user_template(str(student_id), finger_id)
+        if not success:
+            raise EnrollmentError(
+                "Failed to delete fingerprint from device",
+                code="DELETE_TEMPLATE_FAILED",
+            )
+
+    async def get_enrollments_by_student(
+        self, school_id: int, student_id: int
+    ) -> list[EnrollmentSession]:
+        """Get completed enrollments for a student (for UI and sync readiness)."""
+        return list(
+            await self.repository.get_completed_by_student(school_id, student_id)
+        )
+
+    async def get_enrollments_by_device(
+        self, school_id: int, device_id: int
+    ) -> list[EnrollmentSession]:
+        """Get completed enrollments for a device (for UI and sync readiness)."""
+        return list(
+            await self.repository.get_completed_by_device(school_id, device_id)
+        )
+
+    async def cancel_enrollment_by_session_id(
+        self,
+        session_id: str,
+        school_id: int,
+    ) -> Optional[EnrollmentSession]:
+        """
+        Cancel an ongoing enrollment session by session_id.
+        
+        Args:
+            session_id: Enrollment session ID (UUID string)
+            school_id: School ID (for authorization)
+            
+        Returns:
+            Updated EnrollmentSession instance or None if not found
+        """
+        enrollment_session = await self.repository.get_by_session_id(session_id, school_id)
+        if not enrollment_session:
+            return None
+        return await self.cancel_enrollment(enrollment_session.id, school_id)
+
+    async def complete_enrollment(
+        self,
+        enrollment_id: int,
+        template_data: Optional[str] = None,
+        quality_score: Optional[int] = None,
+        school_id: Optional[int] = None,
+    ) -> EnrollmentSession:
+        """
+        Mark enrollment session as completed.
+        
+        This is typically called when enrollment event is received from device.
+        
+        Args:
+            enrollment_id: Enrollment session ID
+            template_data: Optional encrypted fingerprint template
+            quality_score: Optional quality score (0-100)
+            school_id: Optional school ID (for authorization)
+            
+        Returns:
+            Updated EnrollmentSession instance
+        """
+        enrollment_session = await self.repository.get_by_id(enrollment_id, school_id)
+        if not enrollment_session:
+            raise EnrollmentError(
+                f"Enrollment session {enrollment_id} not found",
+                code="ENROLLMENT_NOT_FOUND"
+            )
+        
+        # Update session
+        update_data = EnrollmentSessionUpdate(
+            status=EnrollmentStatus.COMPLETED,
+            template_data=template_data,
+            quality_score=quality_score,
+            completed_at=datetime.utcnow(),
+        )
+        
+        updated_session = await self.repository.update(enrollment_id, update_data, school_id)
+        if not updated_session:
+            raise EnrollmentError(
+                f"Failed to update enrollment session {enrollment_id}",
+                code="ENROLLMENT_UPDATE_ERROR"
+            )
+        
+        # Broadcast completion event
+        if school_id:
+            await enrollment_broadcaster.broadcast_completion(
+                school_id=school_id,
+                session_id=enrollment_session.session_id,
+                message="Enrollment completed successfully",
+                quality_score=quality_score,
+            )
+        
+        logger.info(f"Enrollment completed: session={enrollment_session.session_id}")
+        return updated_session
+    
+    async def _run_enrollment(
+        self,
+        conn,
+        enrollment_id: int,
+        session_id: str,
+        school_id: int,
+        student_id: int,
+        finger_id: int,
+    ):
+        """
+        Background task: run full enrollment using verified AsyncBiometricEnrollment flow.
+
+        Broadcasts all progress events (STARTED, WAITING_FINGER, FINGER_DETECTED,
+        FINGER_PROCESSED, ATTEMPT_COMPLETED, COMPLETED, etc.) to the UI.
+        """
+        async def progress_callback(progress: EnrollmentProgress):
+            """Map EnrollmentProgress to broadcaster calls."""
+            progress_pct, status = _EVENT_TO_UI.get(
+                progress.event, (progress.attempt * 33, "placing")
+            )
+
+            if progress.event in (
+                EnrollmentEvent.COMPLETED,
+                EnrollmentEvent.DUPLICATE_FINGER,
+                EnrollmentEvent.TIMEOUT,
+                EnrollmentEvent.FAILED,
+                EnrollmentEvent.CANCELLED,
+            ):
+                if progress.event == EnrollmentEvent.COMPLETED:
+                    # Verify fingerprint was actually added on device before returning success
+                    try:
+                        verified = await conn.finger_is_enrolled(str(student_id), finger_id)
+                    except Exception as ve:
+                        logger.warning(f"Enrollment verification check failed: {ve}")
+                        verified = False
+                    if not verified:
+                        await enrollment_broadcaster.broadcast_error(
+                            school_id=school_id,
+                            session_id=session_id,
+                            error_message="Enrollment verification failed: fingerprint not found on device.",
+                        )
+                        await self.repository.update_status(
+                            enrollment_id,
+                            EnrollmentStatus.FAILED,
+                            error_message="Verification failed: template not found on device",
+                        )
+                    else:
+                        quality = progress.data.get("size", 85) if progress.data else 85
+                        template_data: Optional[str] = None
+                        try:
+                            raw = await conn.get_template_bytes(str(student_id), finger_id)
+                            if raw:
+                                template_data = encrypt_template(raw)
+                                logger.debug(f"Captured and encrypted template for session={session_id}")
+                        except Exception as te:
+                            logger.warning(f"Template capture failed (enrollment still completes): {te}")
+                        await self.complete_enrollment(
+                            enrollment_id=enrollment_id,
+                            template_data=template_data,
+                            quality_score=quality,
+                            school_id=school_id,
+                        )
+                    # complete_enrollment already broadcasts enrollment_complete when verified
+                else:
+                    await enrollment_broadcaster.broadcast_error(
+                        school_id=school_id,
+                        session_id=session_id,
+                        error_message=progress.message,
+                    )
+                    await self.repository.update_status(
+                        enrollment_id,
+                        EnrollmentStatus.FAILED,
+                        error_message=progress.message,
+                    )
+            else:
+                await enrollment_broadcaster.broadcast_progress(
+                    school_id=school_id,
+                    session_id=session_id,
+                    progress=progress_pct,
+                    status=status,
+                    message=progress.message,
+                )
+
+        try:
+            success = await conn.enroll_user_async(
+                user_id=str(student_id),
+                finger_id=finger_id,
+                uid=student_id,
+                progress_callback=progress_callback,
+                timeout=60,
+                max_attempts=3,
+            )
+
+            logger.info(
+                f"Enrollment finished: session={session_id}, success={success}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error in enrollment task: session={session_id}, error={e}",
+                exc_info=True,
+            )
+            await enrollment_broadcaster.broadcast_error(
+                school_id=school_id,
+                session_id=session_id,
+                error_message=f"Error during enrollment: {str(e)}",
+            )
+            await self.repository.update_status(
+                enrollment_id,
+                EnrollmentStatus.FAILED,
+                error_message=str(e),
+            )

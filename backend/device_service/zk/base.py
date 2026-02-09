@@ -8,6 +8,7 @@ asyncio.to_thread to make it async-compatible.
 
 import asyncio
 import logging
+import time
 from typing import Optional, Any, Dict
 from zk import ZK
 
@@ -376,6 +377,572 @@ class ZKDeviceConnection:
             # Unexpected error - assume connection is dead
             logger.warning(f"Unexpected error testing connection for {self.ip}:{self.port}: {e}")
             self._is_connected = False
+            return False
+
+    async def get_enrolled_finger_ids(self, user_id: str) -> list[int]:
+        """
+        Get list of finger IDs (0-9) that have templates enrolled for this user on the device.
+
+        Args:
+            user_id: User ID string on device (e.g. str(student_id))
+
+        Returns:
+            List of finger indices that have enrolled templates
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        enrolled: list[int] = []
+        try:
+            for finger_id in range(10):
+                try:
+                    templ = await asyncio.to_thread(
+                        self.conn.get_user_template,
+                        uid=None,
+                        temp_id=finger_id,
+                        user_id=user_id,
+                    )
+                    if templ is not None and getattr(templ, "template", None):
+                        enrolled.append(finger_id)
+                except Exception:
+                    continue
+            return enrolled
+        except Exception as e:
+            logger.warning(f"get_enrolled_finger_ids failed for {self.ip}:{self.port}: {e}")
+            return []
+
+    async def finger_is_enrolled(self, user_id: str, finger_id: int) -> bool:
+        """
+        Check if the given finger has an enrolled template for this user on the device.
+
+        Args:
+            user_id: User ID string on device
+            finger_id: Finger index (0-9)
+
+        Returns:
+            True if template exists, False otherwise
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        try:
+            templ = await asyncio.to_thread(
+                self.conn.get_user_template,
+                uid=None,
+                temp_id=finger_id,
+                user_id=user_id,
+            )
+            return templ is not None and bool(getattr(templ, "template", None))
+        except Exception as e:
+            logger.debug(f"finger_is_enrolled check failed: {e}")
+            return False
+
+    async def get_template_bytes(self, user_id: str, finger_id: int) -> Optional[bytes]:
+        """
+        Get fingerprint template bytes from device for storage/sync.
+
+        Args:
+            user_id: User ID string on device (e.g. str(student_id))
+            finger_id: Finger index (0-9)
+
+        Returns:
+            Template bytes or None if not found/error
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        try:
+            templ = await asyncio.to_thread(
+                self.conn.get_user_template,
+                uid=None,
+                temp_id=finger_id,
+                user_id=user_id,
+            )
+            if templ is None:
+                return None
+            template = getattr(templ, "template", None)
+            if template is None or not isinstance(template, (bytes, bytearray)):
+                return None
+            return bytes(template)
+        except Exception as e:
+            logger.warning(f"get_template_bytes failed for {self.ip}:{self.port}: {e}")
+            return None
+
+    async def delete_user_template(
+        self,
+        user_id: str,
+        finger_id: int,
+        uid: Optional[int] = None,
+    ) -> bool:
+        """
+        Delete the fingerprint template for the given user and finger on the device.
+
+        Args:
+            user_id: User ID string on device
+            finger_id: Finger index (0-9)
+            uid: Optional device UID (resolved from get_users by user_id if not provided)
+
+        Returns:
+            True if delete succeeded, False otherwise
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        try:
+            if uid is None:
+                users = await asyncio.to_thread(self.conn.get_users)
+                users = [u for u in (users or []) if getattr(u, "user_id", None) == user_id]
+                if not users:
+                    logger.warning(f"User {user_id} not found on device for delete_user_template")
+                    return False
+                uid = users[0].uid
+
+            await asyncio.to_thread(
+                self.conn.delete_user_template,
+                uid=uid,
+                temp_id=finger_id,
+                user_id="",
+            )
+            logger.info(f"Deleted template user_id={user_id} finger_id={finger_id} on {self.ip}:{self.port}")
+            return True
+        except Exception as e:
+            logger.error(f"delete_user_template failed: {e}", exc_info=True)
+            return False
+
+    async def start_enrollment(self, user_id: int, finger_id: int = 0) -> bool:
+        """
+        Start fingerprint enrollment mode on device.
+        
+        This puts the device in enrollment mode and waits for the user to place their finger.
+        The device will capture the fingerprint template when the user places their finger.
+        
+        Note: This method sends CMD_STARTENROLL command directly without waiting for capture.
+        The actual fingerprint capture and events will be handled asynchronously via event polling.
+        
+        Args:
+            user_id: User ID on the device (typically matches student ID)
+            finger_id: Finger index (0-9, default: 0 for right thumb)
+            
+        Returns:
+            True if enrollment command sent successfully, False otherwise
+            
+        Raises:
+            RuntimeError: If device is not connected
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            # Import struct for packing command string
+            from struct import pack
+            
+            # First, cancel any previous capture
+            await asyncio.to_thread(self.conn.cancel_capture)
+            
+            # Send CMD_STARTENROLL command directly
+            # We replicate the logic from enroll_user() but without waiting for events
+            # Command format depends on TCP/UDP mode
+            command = 61  # CMD_STARTENROLL
+            user_id_str = str(user_id)
+            
+            if self.conn.tcp:
+                # TCP mode: pack('<24sbb', user_id, temp_id, 1)
+                command_string = pack('<24sbb', user_id_str.encode('utf-8')[:24].ljust(24, b'\x00'), finger_id, 1)
+            else:
+                # UDP mode: pack('<Ib', int(user_id), temp_id)
+                command_string = pack('<Ib', int(user_id), finger_id)
+            
+            # Access the private __send_command method using name mangling
+            # In Python, __method becomes _ClassName__method
+            # Since the class is named ZK, __send_command becomes _ZK__send_command
+            cmd_response = await asyncio.to_thread(
+                self.conn._ZK__send_command,  # Access private method via name mangling
+                command,
+                command_string
+            )
+            
+            if cmd_response and cmd_response.get('status'):
+                logger.info(
+                    f"Started enrollment on device {self.ip}:{self.port} - "
+                    f"user_id={user_id}, finger_id={finger_id}"
+                )
+                return True
+            else:
+                logger.warning(
+                    f"Enrollment start command failed on device {self.ip}:{self.port} - "
+                    f"user_id={user_id}, finger_id={finger_id}, response={cmd_response}"
+                )
+                return False
+            
+        except AttributeError as e:
+            # Method doesn't exist on connection object
+            logger.error(f"Method or attribute not found on device {self.ip}:{self.port}: {e}")
+            return False
+        except ZKError as e:
+            # Device returned error response
+            logger.error(f"ZKError starting enrollment on {self.ip}:{self.port}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error starting enrollment on {self.ip}:{self.port}: {e}", exc_info=True)
+            return False
+    
+    async def cancel_enrollment(self) -> bool:
+        """
+        Cancel ongoing fingerprint enrollment.
+        
+        This sends CMD_CANCELCAPTURE command to cancel any active enrollment session.
+        
+        Returns:
+            True if cancel command sent successfully, False otherwise
+            
+        Raises:
+            RuntimeError: If device is not connected
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            # pyzk library method: cancel_capture()
+            # This sends CMD_CANCELCAPTURE command to device
+            success = await asyncio.to_thread(self.conn.cancel_capture)
+            
+            if success:
+                logger.info(f"Cancelled enrollment on device {self.ip}:{self.port}")
+            else:
+                logger.warning(f"Enrollment cancel returned False on device {self.ip}:{self.port}")
+            
+            return bool(success)
+            
+        except AttributeError as e:
+            # Method doesn't exist on connection object
+            logger.error(f"Method cancel_capture not found on device {self.ip}:{self.port}: {e}")
+            return False
+        except ZKError as e:
+            # Device returned error response
+            logger.error(f"ZKError cancelling enrollment on {self.ip}:{self.port}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error cancelling enrollment on {self.ip}:{self.port}: {e}", exc_info=True)
+            return False
+    
+    async def poll_enrollment_events(
+        self,
+        callback=None,
+        timeout: int = 60,
+        max_attempts: int = 3,
+    ):
+        """
+        Poll for enrollment events and report progress via callback.
+        
+        Based on enroll_user() logic, this method listens for enrollment events:
+        - First event: Finger placement detected (33% progress)
+        - Second event: Capturing/processing (66% progress)
+        - Final event: Completion (100% progress or error)
+        
+        Args:
+            callback: Optional callback function(event_type, progress, status, message)
+                     Called with: ('progress', 33, 'placing', 'Place finger...')
+                     Or: ('complete', 100, 'complete', 'Enrollment successful')
+                     Or: ('error', 0, 'error', 'Error message')
+            timeout: Socket timeout in seconds
+            max_attempts: Maximum number of enrollment attempts (default 3)
+            
+        Returns:
+            dict with 'success' (bool), 'progress' (int), 'status' (str), 'message' (str)
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            from struct import unpack, error as struct_error
+            from socket import timeout as SocketTimeout
+            
+            # Use pyzk name-mangled attributes (same as verify_test_2 / test_enrollment_direct)
+            conn = self.conn
+            original_timeout = conn._ZK__timeout
+            conn._ZK__sock.settimeout(timeout)
+            
+            attempts = max_attempts
+            progress = 0
+            status = "placing"
+            message = "Place your finger on the scanner"
+            
+            # Broadcast initial progress if callback provided
+            if callback:
+                await callback('progress', 0, 'ready', 'Enrollment started. Place your finger on the scanner.')
+            
+            while attempts > 0:
+                try:
+                    wait_start = time.monotonic()
+                    # Wait for first event (finger placement)
+                    logger.debug(f"Waiting for first enrollment event (attempt {attempts})...")
+                    data_recv = await asyncio.to_thread(conn._ZK__sock.recv, 1032)
+                    await asyncio.to_thread(conn._ZK__ack_ok)
+                    
+                    # Parse response code
+                    if conn.tcp:
+                        res = unpack("H", data_recv.ljust(24, b"\x00")[16:18])[0] if len(data_recv) > 16 else -1
+                    else:
+                        res = unpack("H", data_recv.ljust(16, b"\x00")[8:10])[0] if len(data_recv) > 8 else -1
+                    
+                    # Early termination (verify_test_2 approach): res 0 = success; res 4 = cancel; res 6 = timeout
+                    # Use elapsed time to distinguish timeout (long wait) vs cancel (short) when res=4
+                    if res == 0:
+                        # Success on first event (device sent completion in one shot)
+                        try:
+                            conn._ZK__sock.settimeout(original_timeout)
+                            await asyncio.to_thread(conn.reg_event, 0)
+                            await asyncio.to_thread(conn.cancel_capture)
+                        except Exception as e:
+                            logger.warning("Cleanup after success: %s", e)
+                        if callback:
+                            await callback('complete', 100, 'complete', 'Enrollment completed successfully')
+                        return {'success': True, 'progress': 100, 'status': 'complete', 'message': 'Enrollment completed successfully'}
+                    if res == 6 or res == 4:
+                        elapsed = time.monotonic() - wait_start
+                        logger.debug(f"Early termination: res={res}, elapsed={elapsed:.1f}s")
+                        cancel_msg = "Enrollment timeout" if (res == 6 or elapsed >= timeout - 5) else "Enrollment cancelled by device"
+                        if callback:
+                            await callback('error', 0, 'error', cancel_msg)
+                        try:
+                            conn._ZK__sock.settimeout(original_timeout)
+                            await asyncio.to_thread(conn.reg_event, 0)
+                            await asyncio.to_thread(conn.cancel_capture)
+                        except Exception as e:
+                            logger.warning("Cleanup after early term: %s", e)
+                        return {'success': False, 'progress': progress, 'status': 'error', 'message': cancel_msg}
+                    
+                    # Broadcast finger placement detected (33%)
+                    if callback:
+                        await callback('progress', 33, 'placing', 'Finger detected. Keep your finger steady...')
+                    
+                    # Wait for second event (capturing)
+                    logger.debug("Waiting for second enrollment event...")
+                    data_recv = await asyncio.to_thread(conn._ZK__sock.recv, 1032)
+                    await asyncio.to_thread(conn._ZK__ack_ok)
+                    
+                    if conn.tcp:
+                        res = unpack("H", data_recv.ljust(24, b"\x00")[16:18])[0] if len(data_recv) > 16 else -1
+                    else:
+                        res = unpack("H", data_recv.ljust(16, b"\x00")[8:10])[0] if len(data_recv) > 8 else -1
+                    
+                    if res == 6 or res == 4:
+                        elapsed = time.monotonic() - wait_start
+                        msg = "Enrollment timeout" if (res == 6 or elapsed >= timeout - 5) else "Enrollment cancelled by device"
+                        if callback:
+                            await callback('error', 0, 'error', msg)
+                        try:
+                            conn._ZK__sock.settimeout(original_timeout)
+                            await asyncio.to_thread(conn.reg_event, 0)
+                            await asyncio.to_thread(conn.cancel_capture)
+                        except Exception as e:
+                            logger.warning("Cleanup: %s", e)
+                        return {'success': False, 'progress': progress, 'status': 'error', 'message': msg}
+                    elif res == 0x64:  # 100 - low quality, retry
+                        logger.debug("Finger quality low, trying again...")
+                        attempts -= 1
+                        if callback:
+                            await callback('progress', 66, 'processing', f'Finger quality low. Attempt {max_attempts - attempts + 1}/{max_attempts}.')
+                        continue
+                    
+                    # Broadcast capturing progress (66%)
+                    if callback:
+                        await callback('progress', 66, 'capturing', 'Capturing fingerprint data...')
+                    
+                    # Final event (completion) - same packet flow as verify_test_2 / test_enrollment_direct
+                    logger.debug("Waiting for final event (completion)...")
+                    data_recv = await asyncio.to_thread(conn._ZK__sock.recv, 1032)
+                    await asyncio.to_thread(conn._ZK__ack_ok)
+                    
+                    if conn.tcp:
+                        res = unpack("H", data_recv.ljust(24, b"\x00")[16:18])[0] if len(data_recv) > 16 else -1
+                    else:
+                        res = unpack("H", data_recv.ljust(16, b"\x00")[8:10])[0] if len(data_recv) > 8 else -1
+                    
+                    # Success: known errors only 4,5,6. Many devices return 46,50,54,55 etc for success.
+                    if res not in (4, 5, 6):
+                        try:
+                            size = unpack("H", data_recv.ljust(16, b"\x00")[10:12])[0]
+                            pos = unpack("H", data_recv.ljust(16, b"\x00")[12:14])[0]
+                            msg = f"Enrollment completed successfully (size={size}, pos={pos})"
+                        except (IndexError, struct_error):
+                            msg = "Enrollment completed successfully"
+                        try:
+                            conn._ZK__sock.settimeout(original_timeout)
+                            await asyncio.to_thread(conn.reg_event, 0)
+                            await asyncio.to_thread(conn.cancel_capture)
+                        except Exception as e:
+                            logger.warning("Cleanup after success: %s", e)
+                        if callback:
+                            await callback('complete', 100, 'complete', msg)
+                        return {'success': True, 'progress': 100, 'status': 'complete', 'message': msg}
+                    if res == 5:
+                        msg = "This fingerprint is already enrolled"
+                        if callback:
+                            await callback('error', 0, 'error', msg)
+                        return {'success': False, 'progress': 0, 'status': 'error', 'message': msg}
+                    # res 4 or 6
+                    msg = "Enrollment timeout"
+                    if callback:
+                        await callback('error', 0, 'error', msg)
+                    return {'success': False, 'progress': 0, 'status': 'error', 'message': msg}
+                    
+                except SocketTimeout:
+                    logger.warning("Timeout waiting for enrollment event")
+                    if callback:
+                        await callback('error', 0, 'error', 'Enrollment timeout. Please try again.')
+                    return {'success': False, 'progress': progress, 'status': 'error', 'message': 'Enrollment timeout'}
+                except Exception as e:
+                    logger.error(f"Error polling enrollment event: {e}", exc_info=True)
+                    if callback:
+                        await callback('error', 0, 'error', f'Error during enrollment: {str(e)}')
+                    return {'success': False, 'progress': progress, 'status': 'error', 'message': str(e)}
+            
+            # Final event when attempts exhausted (low-quality retries)
+            if attempts == 0:
+                try:
+                    logger.debug("Waiting for final enrollment event...")
+                    data_recv = await asyncio.to_thread(conn._ZK__sock.recv, 1032)
+                    await asyncio.to_thread(conn._ZK__ack_ok)
+                    if conn.tcp:
+                        res = unpack("H", data_recv.ljust(24, b"\x00")[16:18])[0]
+                    else:
+                        res = unpack("H", data_recv.ljust(16, b"\x00")[8:10])[0]
+                    if res not in (4, 5, 6):
+                        try:
+                            size = unpack("H", data_recv.ljust(16, b"\x00")[10:12])[0]
+                            pos = unpack("H", data_recv.ljust(16, b"\x00")[12:14])[0]
+                            message = f"Enrollment completed successfully (size={size}, pos={pos})"
+                        except (IndexError, struct_error):
+                            message = "Enrollment completed successfully"
+                        try:
+                            conn._ZK__sock.settimeout(original_timeout)
+                            await asyncio.to_thread(conn.reg_event, 0)
+                            await asyncio.to_thread(conn.cancel_capture)
+                        except Exception as e:
+                            logger.warning("Cleanup after success: %s", e)
+                        if callback:
+                            await callback('complete', 100, 'complete', message)
+                        return {'success': True, 'progress': 100, 'status': 'complete', 'message': message}
+                    if res == 5:
+                        message = "This fingerprint is already enrolled"
+                        if callback:
+                            await callback('error', 0, 'error', message)
+                        return {'success': False, 'progress': 0, 'status': 'error', 'message': message}
+                    message = "Enrollment timeout"
+                    if callback:
+                        await callback('error', 0, 'error', message)
+                    return {'success': False, 'progress': 0, 'status': 'error', 'message': message}
+                except SocketTimeout:
+                    if callback:
+                        await callback('error', 0, 'error', 'Enrollment timeout')
+                    return {'success': False, 'progress': 0, 'status': 'error', 'message': 'Enrollment timeout'}
+                except Exception as e:
+                    logger.error("Error waiting for enrollment completion: %s", e, exc_info=True)
+                    if callback:
+                        await callback('error', 0, 'error', str(e))
+                    return {'success': False, 'progress': 0, 'status': 'error', 'message': str(e)}
+            
+            try:
+                conn._ZK__sock.settimeout(original_timeout)
+                await asyncio.to_thread(conn.reg_event, 0)
+                await asyncio.to_thread(conn.cancel_capture)
+            except Exception as e:
+                logger.warning("Cleanup: %s", e)
+            return {'success': False, 'progress': progress, 'status': 'error', 'message': 'Enrollment failed'}
+            
+        except Exception as e:
+            logger.error(f"Unexpected error polling enrollment events: {e}", exc_info=True)
+            if callback:
+                await callback('error', 0, 'error', f'Unexpected error: {str(e)}')
+            return {'success': False, 'progress': 0, 'status': 'error', 'message': str(e)}
+    
+    async def enroll_user_async(
+        self,
+        user_id: str,
+        finger_id: int = 0,
+        uid: int = 0,
+        progress_callback=None,
+        timeout: int = 60,
+        max_attempts: int = 3,
+    ):
+        """
+        Run full enrollment flow using verified AsyncBiometricEnrollment logic.
+
+        This aligns with verify_test_2 - emits rich events (STARTED, WAITING_FINGER,
+        FINGER_DETECTED, FINGER_PROCESSED, ATTEMPT_COMPLETED, COMPLETED, etc.)
+        via progress_callback for UI broadcasting.
+
+        Args:
+            user_id: User ID string on device (e.g. student_id as string)
+            finger_id: Finger index (0-9)
+            uid: User UID (used if user_id empty to resolve from device)
+            progress_callback: Async callback(EnrollmentProgress) - receives all events
+            timeout: Socket timeout in seconds
+            max_attempts: Max finger scan attempts
+
+        Returns:
+            True if enrollment successful, False otherwise
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        from device_service.zk.enrollment import AsyncBiometricEnrollment
+
+        enrollment = AsyncBiometricEnrollment(self.conn)
+        return await enrollment.enroll_user_async(
+            uid=uid,
+            temp_id=finger_id,
+            user_id=user_id,
+            progress_callback=progress_callback,
+            timeout=timeout,
+            max_attempts=max_attempts,
+        )
+
+    async def register_event(self, event_flag: int) -> bool:
+        """
+        Register for real-time device events.
+        
+        This sends CMD_REG_EVENT command to register for specific event types.
+        Common event flags:
+        - EF_ATTLOG = 1 (attendance events)
+        - EF_ENROLLFINGER = 8 (enrollment events)
+        - EF_ALARM = 512 (alarm events)
+        
+        Args:
+            event_flag: Event flag value (bitmask)
+            
+        Returns:
+            True if event registration successful, False otherwise
+            
+        Raises:
+            RuntimeError: If device is not connected
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+        
+        try:
+            # pyzk library method: reg_event(event_flag)
+            # This sends CMD_REG_EVENT command to device
+            success = await asyncio.to_thread(self.conn.reg_event, event_flag)
+            
+            if success:
+                logger.debug(f"Registered for events (flag={event_flag}) on device {self.ip}:{self.port}")
+            else:
+                logger.warning(f"Event registration returned False on device {self.ip}:{self.port}")
+            
+            return bool(success)
+            
+        except AttributeError as e:
+            # Method doesn't exist on connection object
+            logger.error(f"Method reg_event not found on device {self.ip}:{self.port}: {e}")
+            return False
+        except ZKError as e:
+            # Device returned error response
+            logger.error(f"ZKError registering events on {self.ip}:{self.port}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error registering events on {self.ip}:{self.port}: {e}", exc_info=True)
             return False
     
     async def __aenter__(self):

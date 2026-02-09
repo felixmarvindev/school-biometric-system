@@ -25,13 +25,13 @@ Create success screen component that displays after enrollment completes, showin
 
 ## Acceptance Criteria
 
-1. [ ] Success screen component created
-2. [ ] Shows enrollment success message
-3. [ ] Shows student details
-4. [ ] Shows device details
-5. [ ] Shows finger enrolled
-6. [ ] Shows quality score (if available)
-7. [ ] "Enroll Another" button
+1. [x] Success screen component created
+2. [x] Shows enrollment success message
+3. [x] Shows student details
+4. [x] Shows device details
+5. [x] Shows finger enrolled
+6. [x] Shows quality score (if available)
+7. [x] "Enroll Another" button
 8. [ ] "View Students" button
 9. [ ] Success animation/confetti (optional)
 
@@ -128,10 +128,10 @@ export function EnrollmentSuccess({
 
 ## Definition of Done
 
-- [ ] Success component created
-- [ ] All details displayed
-- [ ] Buttons work
-- [ ] Navigation works
+- [x] Success component created (in EnrollmentCapture success state)
+- [x] All details displayed
+- [x] Buttons work (Enroll Another via onRetry)
+- [x] Navigation works (reset wizard on complete)
 
 ## Next Phase
 

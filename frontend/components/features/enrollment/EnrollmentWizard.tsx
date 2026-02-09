@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Hash,
   Hand,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -39,7 +40,7 @@ interface EnrollmentWizardProps {
     studentId: number
     deviceId: number
     fingerId: number
-  }) => Promise<void>
+  }) => Promise<{ session_id: string; status: string; started_at: string } | undefined>
 }
 
 export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = {}) {
@@ -48,6 +49,8 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
   const [selectedDevice, setSelectedDevice] = useState<DeviceResponse | null>(null)
   const [selectedFinger, setSelectedFinger] = useState<number | null>(null)
   const [isCapturing, setIsCapturing] = useState(false)
+  const [enrollmentSession, setEnrollmentSession] = useState<{ session_id: string; status: string; started_at: string } | null>(null)
+  const [isStartingEnrollment, setIsStartingEnrollment] = useState(false)
 
   const canProceed = () => {
     switch (currentStep) {
@@ -62,12 +65,37 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
     }
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (canProceed() && currentStep < 4) {
       if (currentStep === 3) {
-        setIsCapturing(true)
+        // Start enrollment API call when moving to capture step
+        if (onStartEnrollment && selectedStudent && selectedDevice && selectedFinger !== null) {
+          setIsStartingEnrollment(true)
+          try {
+            const response = await onStartEnrollment({
+              studentId: selectedStudent.id,
+              deviceId: selectedDevice.id,
+              fingerId: selectedFinger,
+            })
+            if (response) {
+              setEnrollmentSession(response)
+              setIsCapturing(true)
+              setCurrentStep(currentStep + 1)
+            }
+          } catch (error) {
+            // Error handling is done in parent component
+            // Don't advance to next step on error
+            console.error('Failed to start enrollment:', error)
+          } finally {
+            setIsStartingEnrollment(false)
+          }
+        } else {
+          setIsCapturing(true)
+          setCurrentStep(currentStep + 1)
+        }
+      } else {
+        setCurrentStep(currentStep + 1)
       }
-      setCurrentStep(currentStep + 1)
     }
   }
 
@@ -75,23 +103,18 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
       setIsCapturing(false)
+      setEnrollmentSession(null)
     }
   }
 
-  const handleEnrollmentComplete = async () => {
-    if (onStartEnrollment && selectedStudent && selectedDevice && selectedFinger !== null) {
-      await onStartEnrollment({
-        studentId: selectedStudent.id,
-        deviceId: selectedDevice.id,
-        fingerId: selectedFinger,
-      })
-    }
-    
+  const handleEnrollmentComplete = () => {
+    // Reset wizard after enrollment completion
     setCurrentStep(1)
     setSelectedStudent(null)
     setSelectedDevice(null)
     setSelectedFinger(null)
     setIsCapturing(false)
+    setEnrollmentSession(null)
   }
 
   const handleEnrollAnother = () => {
@@ -404,7 +427,12 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
 
           {/* Step 3: Finger Selection */}
           {currentStep === 3 && (
-            <FingerSelector selectedFinger={selectedFinger} onSelect={setSelectedFinger} student={selectedStudent} />
+            <FingerSelector
+              selectedFinger={selectedFinger}
+              onSelect={setSelectedFinger}
+              student={selectedStudent}
+              deviceId={selectedDevice?.id}
+            />
           )}
 
           {/* Step 4: Capture */}
@@ -413,6 +441,7 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
               student={selectedStudent}
               device={selectedDevice}
               fingerId={selectedFinger}
+              sessionId={enrollmentSession?.session_id}
               onComplete={handleEnrollmentComplete}
               onRetry={handleEnrollAnother}
               onCancel={handlePrevious}
@@ -428,8 +457,13 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
               Back
             </Button>
 
-            <Button onClick={handleNext} disabled={!canProceed()} className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all">
-              {currentStep === 3 ? (
+            <Button onClick={handleNext} disabled={!canProceed() || isStartingEnrollment} className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all">
+              {isStartingEnrollment ? (
+                <>
+                  Starting Enrollment...
+                  <Loader2 className="size-4 animate-spin" />
+                </>
+              ) : currentStep === 3 ? (
                 <>
                   Start Capture
                   <Play className="size-4" />

@@ -67,10 +67,10 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
             <div className="grid gap-3">
               {onlineDevices.map((device) => {
                 const isSelected = selectedDevice?.id === device.id
-
-                return (
+            
+            return (
                   <button
-                    key={device.id}
+                key={device.id}
                     onClick={() => onSelect(device)}
                     className={cn(
                       "w-full p-4 rounded-xl border-2 text-left transition-all",
@@ -85,7 +85,7 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
                             "relative flex items-center justify-center size-12 rounded-xl shrink-0 transition-all",
                             isSelected ? "bg-blue-600 text-white scale-105" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400",
                           )}
-                        >
+              >
                           <Server className="size-5" />
                           {isSelected && (
                             <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-background flex items-center justify-center">
@@ -102,7 +102,7 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
                                 isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-gray-100",
                               )}
                             >
-                              {device.name}
+                      {device.name}
                             </span>
                         <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-0 text-xs">
                           <Wifi className="size-3 mr-1" />
@@ -133,8 +133,8 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
                   </button>
                 )
               })}
-            </div>
-          </div>
+                    </div>
+                  </div>
 
           {/* Offline Devices */}
           {offlineDevices.length > 0 && (
@@ -153,7 +153,7 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
                       </div>
 
                       <div>
-                        <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-600 dark:text-gray-400">{device.name}</span>
                       <Badge variant="secondary" className="text-xs bg-gray-500/10 text-gray-700 dark:text-gray-400">
                         <WifiOff className="size-3 mr-1" />
@@ -165,14 +165,14 @@ export function DeviceSelector({ selectedDevice, onSelect }: DeviceSelectorProps
                             <MapPin className="size-3" />
                             {device.location}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </div>
+                </div>
+              </div>
                 ))}
               </div>
             </div>
-          )}
+            )}
         </>
       )}
     </div>

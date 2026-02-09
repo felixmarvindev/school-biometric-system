@@ -118,7 +118,7 @@ export function StudentSelector({ selectedStudent, onSelect }: StudentSelectorPr
             {classes.map((c) => (
               <SelectItem key={c.id} value={c.id.toString()}>
                 {c.name}
-              </SelectItem>
+                </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -158,15 +158,15 @@ export function StudentSelector({ selectedStudent, onSelect }: StudentSelectorPr
               // TODO: Get enrolled fingers count when API is ready
               const enrolledFingersCount = 0
 
-              return (
+                return (
                 <button
-                  key={student.id}
-                  onClick={() => onSelect(student)}
+                    key={student.id}
+                    onClick={() => onSelect(student)}
                   className={cn(
                     "w-full flex items-center gap-4 p-4 text-left transition-all",
                     isSelected ? "bg-blue-50 ring-2 ring-inset ring-blue-600 dark:bg-blue-900/30 dark:ring-blue-500" : "hover:bg-blue-50/50 dark:hover:bg-gray-700/50",
                   )}
-                >
+                  >
                   <div
                     className={cn(
                       "relative flex items-center justify-center size-12 rounded-full font-semibold text-sm shrink-0 transition-all",
@@ -182,7 +182,7 @@ export function StudentSelector({ selectedStudent, onSelect }: StudentSelectorPr
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className={cn(
@@ -190,14 +190,14 @@ export function StudentSelector({ selectedStudent, onSelect }: StudentSelectorPr
                           isSelected ? "text-blue-600 dark:text-blue-400" : "text-gray-900 dark:text-gray-100",
                         )}
                       >
-                        {student.first_name} {student.last_name}
+                          {student.first_name} {student.last_name}
                       </span>
                       {enrolledFingersCount > 0 && (
                         <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0">
                           {enrolledFingersCount} enrolled
                         </Badge>
                       )}
-                    </div>
+                        </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
                       <span>{student.admission_number}</span>
                       {selectedClassData && (
@@ -216,13 +216,13 @@ export function StudentSelector({ selectedStudent, onSelect }: StudentSelectorPr
                     )}
                   >
                     {isSelected && <CheckCircle2 className="size-4 text-white" />}
-                  </div>
+            </div>
                 </button>
               )
             })
           )}
-        </div>
-      </div>
+            </div>
+          </div>
     </div>
   )
 }

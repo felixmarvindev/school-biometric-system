@@ -1,15 +1,21 @@
 "use client"
-import { Check, Star } from "lucide-react"
+
+import { useEffect, useState } from "react"
+import { Check, Star, Trash2, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FINGERS, type FingerInfo } from "@/lib/utils/fingers"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import type { StudentResponse } from "@/lib/api/students"
+import { getEnrolledFingers, deleteFingerprint } from "@/lib/api/enrollment"
 
 interface FingerSelectorProps {
   selectedFinger: number | null
-  onSelect: (fingerId: number) => void
+  onSelect: (fingerId: number | null) => void
   student?: StudentResponse | null
+  /** When set with student, enrolled fingers are fetched and disabled for selection; delete is shown for enrolled. */
+  deviceId?: number | null
 }
 
 // SVG paths for realistic hand illustration
@@ -38,7 +44,7 @@ const RIGHT_HAND_PATHS = {
   palm: "M 95 170 Q 80 200 80 240 Q 80 290 100 320 Q 120 350 160 350 Q 200 350 220 320 Q 240 290 240 240 Q 240 200 225 170 L 95 170",
   fingers: [
     // Thumb (leftmost on right hand palm view)
-    {
+  {
       id: 0,
       path: "M 85 180 Q 60 160 50 130 Q 45 110 55 95 Q 65 80 80 85 Q 95 90 100 110 Q 105 130 95 155 Q 90 170 85 180",
       cx: 70,
@@ -60,9 +66,10 @@ interface HandIllustrationProps {
   selectedFinger: number | null
   enrolledFingers: number[]
   onFingerClick: (id: number) => void
+  onDeleteFinger?: (id: number) => void
 }
 
-function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick }: HandIllustrationProps) {
+function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick, onDeleteFinger }: HandIllustrationProps) {
   const paths = hand === "left" ? LEFT_HAND_PATHS : RIGHT_HAND_PATHS
 
   return (
@@ -71,7 +78,7 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
       <svg viewBox="0 0 300 380" className="w-full max-w-[200px] h-auto">
         {/* Palm */}
         <path d={paths.palm} className="fill-gray-300 dark:fill-gray-600 transition-colors" />
-
+        
         {/* Fingers */}
         <TooltipProvider delayDuration={0}>
           {paths.fingers.map((finger) => {
@@ -79,11 +86,15 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
             const isSelected = selectedFinger === finger.id
             const isEnrolled = enrolledFingers.includes(finger.id)
             const isRecommended = fingerInfo?.recommended
+            const canSelect = !isEnrolled
 
             return (
               <Tooltip key={finger.id}>
                 <TooltipTrigger asChild>
-                  <g onClick={() => onFingerClick(finger.id)} className="cursor-pointer">
+                  <g
+                    onClick={() => canSelect && onFingerClick(finger.id)}
+                    className={cn(canSelect ? "cursor-pointer" : "cursor-default")}
+                  >
                     <path
                       d={finger.path}
                       className={cn(
@@ -121,14 +132,35 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
                   </g>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="font-medium">
-                  <div className="flex items-center gap-2">
-                    {fingerInfo?.name}
-                    {isRecommended && (
-                      <Badge variant="secondary" className="text-xs">
-                        Recommended
-                      </Badge>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      {fingerInfo?.name}
+                      {isRecommended && (
+                        <Badge variant="secondary" className="text-xs">
+                          Recommended
+                        </Badge>
+                      )}
+                      {isEnrolled && (
+                        <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-0 text-xs">
+                          Enrolled
+                        </Badge>
+                      )}
+                    </div>
+                    {isEnrolled && onDeleteFinger && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/50"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          onDeleteFinger(finger.id)
+                        }}
+                      >
+                        <Trash2 className="size-3.5 mr-1" />
+                        Remove fingerprint
+                      </Button>
                     )}
-                    {isEnrolled && <Badge className="bg-green-500/10 text-green-700 dark:text-green-400 border-0 text-xs">Enrolled</Badge>}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -140,9 +172,49 @@ function HandIllustration({ hand, selectedFinger, enrolledFingers, onFingerClick
   )
 }
 
-export function FingerSelector({ selectedFinger, onSelect, student }: FingerSelectorProps) {
-  // TODO: Get enrolled fingers from student when API is ready
-  const enrolledFingers: number[] = []
+export function FingerSelector({ selectedFinger, onSelect, student, deviceId }: FingerSelectorProps) {
+  const [enrolledFingers, setEnrolledFingers] = useState<number[]>([])
+  const [loadingFingers, setLoadingFingers] = useState(false)
+  const [deletingFingerId, setDeletingFingerId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!student?.id || deviceId == null) {
+      setEnrolledFingers([])
+      return
+    }
+    let cancelled = false
+    setLoadingFingers(true)
+    getEnrolledFingers(deviceId, student.id)
+      .then((res) => {
+        if (!cancelled) setEnrolledFingers(res.finger_ids ?? [])
+      })
+      .catch(() => {
+        if (!cancelled) setEnrolledFingers([])
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFingers(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [student?.id, deviceId])
+
+  const handleDeleteFinger = async (fingerId: number) => {
+    if (!student?.id || deviceId == null) return
+    setDeletingFingerId(fingerId)
+    try {
+      await deleteFingerprint(deviceId, student.id, fingerId)
+      setEnrolledFingers((prev) => prev.filter((id) => id !== fingerId))
+      if (selectedFinger === fingerId) {
+        onSelect(null)
+      }
+    } catch (e) {
+      console.error("Failed to delete fingerprint:", e)
+    } finally {
+      setDeletingFingerId(null)
+    }
+  }
+
   const selectedFingerInfo = FINGERS.find((f) => f.id === selectedFinger)
 
   return (
@@ -150,12 +222,18 @@ export function FingerSelector({ selectedFinger, onSelect, student }: FingerSele
       {/* Instructions */}
       <div className="text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Click on a finger to select it for enrollment.
+          Click on a finger to select it for enrollment. Enrolled fingers are disabled; use Remove to delete first.
           <span className="inline-flex items-center gap-1 ml-1">
             <Star className="size-3 text-yellow-500" fill="currentColor" />
             indicates recommended finger.
           </span>
         </p>
+        {loadingFingers && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1 mt-1">
+            <Loader2 className="size-3 animate-spin" />
+            Loading enrolled fingers…
+          </p>
+        )}
       </div>
 
       {/* Hand Illustrations */}
@@ -164,14 +242,16 @@ export function FingerSelector({ selectedFinger, onSelect, student }: FingerSele
           hand="left"
           selectedFinger={selectedFinger}
           enrolledFingers={enrolledFingers}
-          onFingerClick={onSelect}
+          onFingerClick={(id) => !enrolledFingers.includes(id) && onSelect(id)}
+          onDeleteFinger={deviceId && student ? handleDeleteFinger : undefined}
         />
         <div className="hidden sm:block w-px h-48 bg-gray-300 dark:bg-gray-700" />
         <HandIllustration
           hand="right"
           selectedFinger={selectedFinger}
           enrolledFingers={enrolledFingers}
-          onFingerClick={onSelect}
+          onFingerClick={(id) => !enrolledFingers.includes(id) && onSelect(id)}
+          onDeleteFinger={deviceId && student ? handleDeleteFinger : undefined}
         />
       </div>
 
@@ -179,23 +259,44 @@ export function FingerSelector({ selectedFinger, onSelect, student }: FingerSele
         {FINGERS.map((finger) => {
           const isSelected = selectedFinger === finger.id
           const isEnrolled = enrolledFingers.includes(finger.id)
+          const isDeleting = deletingFingerId === finger.id
 
           return (
-            <button
-              key={finger.id}
-              onClick={() => onSelect(finger.id)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
-                isSelected
-                  ? "border-blue-600 bg-blue-600 text-white shadow-md scale-105"
-                  : isEnrolled
-                    ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
-                    : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-500/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
+            <div key={finger.id} className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => !isEnrolled && onSelect(finger.id)}
+                disabled={isEnrolled}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                  isSelected
+                    ? "border-blue-600 bg-blue-600 text-white shadow-md scale-105"
+                    : isEnrolled
+                      ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400 cursor-not-allowed opacity-90"
+                      : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-blue-500/50 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100",
+                )}
+              >
+                {finger.name}
+                {isEnrolled && !isSelected && " ✓"}
+              </button>
+              {isEnrolled && deviceId && student && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/50"
+                  onClick={() => handleDeleteFinger(finger.id)}
+                  disabled={isDeleting}
+                  aria-label={`Remove ${finger.name} fingerprint`}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-3.5" />
+                  )}
+                </Button>
               )}
-            >
-              {finger.name}
-              {isEnrolled && !isSelected && " ✓"}
-            </button>
+            </div>
           )
         })}
       </div>

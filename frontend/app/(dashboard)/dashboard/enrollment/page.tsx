@@ -1,39 +1,74 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { fadeInUp } from '@/lib/animations/framer-motion';
 import { EnrollmentWizard } from '@/components/features/enrollment/EnrollmentWizard';
+import { startEnrollment, EnrollmentApiError } from '@/lib/api/enrollment';
 
 export default function EnrollmentPage() {
+
   const handleStartEnrollment = async (data: {
     studentId: number;
     deviceId: number;
     fingerId: number;
   }) => {
     try {
-      // TODO: Phase 2 - Call enrollment API
-      console.log('Enrollment completed:', data);
-      
-      // Simulate API call delay (in real implementation, this would be the actual API call)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call enrollment API
+      const response = await startEnrollment({
+        student_id: data.studentId,
+        device_id: data.deviceId,
+        finger_id: data.fingerId,
+      });
       
       // Show success message
-      toast.success('Enrollment Successful', {
-        description: `Fingerprint has been successfully enrolled. Student ID: ${data.studentId}, Device ID: ${data.deviceId}, Finger: ${data.fingerId}`,
+      toast.success('Enrollment Started', {
+        description: `Enrollment session started. The device is now waiting for the student to place their finger.`,
         duration: 5000,
       });
       
-      // In a real implementation, you might want to:
-      // - Refresh student data to show updated enrollment status
-      // - Navigate to a success page
-      // - Show enrollment summary
+      // Return session info to wizard component
+      return response;
+      
     } catch (error) {
       console.error('Enrollment error:', error);
-      toast.error('Enrollment Failed', {
-        description: error instanceof Error ? error.message : 'An error occurred during enrollment',
-        duration: 5000,
-      });
+      
+      // Handle different error types
+      if (error instanceof EnrollmentApiError) {
+        // Show specific error message based on status code
+        if (error.statusCode === 503) {
+          toast.error('Device Offline', {
+            description: 'The selected device is currently offline or unreachable. Please try again later or select a different device.',
+            duration: 7000,
+          });
+        } else if (error.statusCode === 404) {
+          toast.error('Not Found', {
+            description: 'Student or device not found. Please check your selections and try again.',
+            duration: 5000,
+          });
+        } else if (error.statusCode === 409) {
+          toast.error('Enrollment In Progress', {
+            description: 'An enrollment session is already in progress. Please wait for it to complete or cancel it first.',
+            duration: 5000,
+          });
+        } else {
+          // Generic error message
+          toast.error('Enrollment Failed', {
+            description: error.message || 'Failed to start enrollment. Please try again.',
+            duration: 5000,
+          });
+        }
+      } else {
+        // Unexpected error
+        toast.error('Enrollment Failed', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred during enrollment',
+          duration: 5000,
+        });
+      }
+      
+      // Re-throw error so wizard can handle it
+      throw error;
     }
   };
 

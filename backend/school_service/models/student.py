@@ -43,6 +43,7 @@ class Student(Base):
     school = relationship("School", back_populates="students", lazy="selectin")
     class_ = relationship("AcademicClass", back_populates="students", lazy="selectin")
     stream = relationship("Stream", back_populates="students", lazy="selectin")
+    enrollment_sessions = relationship("EnrollmentSession", back_populates="student", lazy="selectin")
 
     # Unique constraint: admission_number must be unique per school
     __table_args__ = (

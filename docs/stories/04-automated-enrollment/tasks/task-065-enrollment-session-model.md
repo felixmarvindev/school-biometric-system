@@ -25,14 +25,14 @@ Create the database model and schema for enrollment sessions to track enrollment
 
 ## Acceptance Criteria
 
-1. [ ] Enrollment session model created
-2. [ ] Model includes: student_id, device_id, finger_id, status, session_id
-3. [ ] Model includes: started_at, completed_at, error_message
-4. [ ] Model includes: template_data (encrypted, nullable)
-5. [ ] Model includes: quality_score (nullable)
-6. [ ] Database migration created
-7. [ ] Model relationships defined (student, device)
-8. [ ] Soft delete support (is_deleted)
+1. [x] Enrollment session model created
+2. [x] Model includes: student_id, device_id, finger_id, status, session_id
+3. [x] Model includes: started_at, completed_at, error_message
+4. [x] Model includes: template_data (encrypted, nullable)
+5. [x] Model includes: quality_score (nullable)
+6. [x] Database migration created
+7. [x] Model relationships defined (student, device)
+8. [x] Soft delete support (is_deleted)
 
 ## Implementation Details
 
@@ -120,11 +120,11 @@ class EnrollmentSession(Base):
 
 ## Definition of Done
 
-- [ ] Enrollment session model created
-- [ ] All required fields included
-- [ ] Database migration created and applied
-- [ ] Model relationships work
-- [ ] Soft delete support added
+- [x] Enrollment session model created
+- [x] All required fields included
+- [x] Database migration created and applied
+- [x] Model relationships work
+- [x] Soft delete support added
 
 ## Next Task
 

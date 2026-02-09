@@ -25,14 +25,14 @@ Create frontend component to display enrollment progress with progress bar, stat
 
 ## Acceptance Criteria
 
-1. [ ] Enrollment progress component created
-2. [ ] Progress bar displays (0% → 33% → 66% → 100%)
-3. [ ] Status messages update in real-time
-4. [ ] Progress bar animates smoothly
-5. [ ] Student and device info displayed
-6. [ ] Cancel button available
-7. [ ] Component subscribes to WebSocket events
-8. [ ] Loading states handled
+1. [x] Enrollment progress component created
+2. [x] Progress bar displays (0% → 33% → 66% → 100%)
+3. [x] Status messages update in real-time
+4. [x] Progress bar animates smoothly
+5. [x] Student and device info displayed
+6. [x] Cancel button available
+7. [x] Component subscribes to WebSocket events
+8. [x] Loading states handled
 
 ## Implementation Details
 
@@ -120,11 +120,11 @@ export function EnrollmentProgress({
 
 ## Definition of Done
 
-- [ ] Progress component created
-- [ ] Progress bar works
-- [ ] Status messages update
-- [ ] WebSocket integration works
-- [ ] Animations smooth
+- [x] Progress component created
+- [x] Progress bar works
+- [x] Status messages update
+- [x] WebSocket integration works
+- [x] Animations smooth
 
 ## Next Task
 

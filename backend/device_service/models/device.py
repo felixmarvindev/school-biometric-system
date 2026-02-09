@@ -87,6 +87,7 @@ class Device(Base):
     # Relationships
     school = relationship("School", back_populates="devices", lazy="selectin")
     device_group = relationship("DeviceGroup", back_populates="devices", lazy="selectin")
+    enrollment_sessions = relationship("EnrollmentSession", back_populates="device", lazy="selectin")
 
     # Unique constraint: IP/port combination must be unique per school
     # Serial number is globally unique (if provided)

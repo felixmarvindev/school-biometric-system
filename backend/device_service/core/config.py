@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     ALGORITHM: str = "HS256"
 
+    # Template encryption (Fernet key - base64-encoded 32-byte key)
+    # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    TEMPLATE_ENCRYPTION_KEY: str = ""
+
     # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",

@@ -9,6 +9,7 @@ from school_service.models.school import School
 from school_service.models.user import User
 from device_service.models.device import Device
 from device_service.models.device_group import DeviceGroup
+from device_service.models.enrollment import EnrollmentSession
 
 # Create async engine
 engine = create_async_engine(

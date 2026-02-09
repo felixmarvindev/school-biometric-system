@@ -27,8 +27,8 @@ Implement fingerprint template capture from device when enrollment completes and
 
 1. [ ] Can capture template data from device
 2. [ ] Template is encrypted before storage
-3. [ ] Template stored in enrollment session record
-4. [ ] Quality score captured (if available)
+3. [x] Template stored in enrollment session record
+4. [x] Quality score captured (if available)
 5. [ ] Enrollment record created linking student to device
 6. [ ] Template encryption/decryption utilities work
 7. [ ] Unit tests created
@@ -116,8 +116,8 @@ class EnrollmentService:
 
 - [ ] Template capture works
 - [ ] Template encryption works
-- [ ] Template storage works
-- [ ] Quality score captured
+- [x] Template storage works (schema + quality_score in session)
+- [x] Quality score captured
 - [ ] Unit tests pass
 
 ## Next Task

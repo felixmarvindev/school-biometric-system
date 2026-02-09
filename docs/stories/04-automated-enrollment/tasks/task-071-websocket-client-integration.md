@@ -25,13 +25,13 @@ Create WebSocket client hook and integrate it with the enrollment progress compo
 
 ## Acceptance Criteria
 
-1. [ ] WebSocket hook created (`useEnrollmentProgress`)
-2. [ ] Hook connects to enrollment WebSocket endpoint
-3. [ ] Hook receives progress events
-4. [ ] Hook handles completion events
-5. [ ] Hook handles error events
-6. [ ] Hook handles reconnection
-7. [ ] Hook cleans up on unmount
+1. [x] WebSocket hook created (`useEnrollmentProgress`)
+2. [x] Hook connects to enrollment WebSocket endpoint
+3. [x] Hook receives progress events
+4. [x] Hook handles completion events
+5. [x] Hook handles error events
+6. [x] Hook handles reconnection
+7. [x] Hook cleans up on unmount
 
 ## Implementation Details
 
@@ -128,11 +128,11 @@ export function useEnrollmentProgress(
 
 ## Definition of Done
 
-- [ ] WebSocket hook created
-- [ ] Connection works
-- [ ] Events received correctly
-- [ ] Cleanup works
-- [ ] Reconnection works
+- [x] WebSocket hook created
+- [x] Connection works
+- [x] Events received correctly
+- [x] Cleanup works
+- [x] Reconnection works
 
 ## Next Phase
 

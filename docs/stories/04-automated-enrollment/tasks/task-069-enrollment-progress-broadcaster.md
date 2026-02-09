@@ -25,12 +25,12 @@ Create a WebSocket broadcaster service to emit enrollment progress events (0%, 3
 
 ## Acceptance Criteria
 
-1. [ ] Enrollment progress broadcaster service created
-2. [ ] Can emit progress events (0%, 33%, 66%, 100%)
-3. [ ] Events include: session_id, progress, status, message
-4. [ ] Events filtered by school_id
-5. [ ] Completion event emitted on success
-6. [ ] Error event emitted on failure
+1. [x] Enrollment progress broadcaster service created
+2. [x] Can emit progress events (0%, 33%, 66%, 100%)
+3. [x] Events include: session_id, progress, status, message
+4. [x] Events filtered by school_id
+5. [x] Completion event emitted on success
+6. [x] Error event emitted on failure
 
 ## Implementation Details
 
@@ -111,10 +111,10 @@ class EnrollmentProgressBroadcaster:
 
 ## Definition of Done
 
-- [ ] Progress broadcaster created
-- [ ] Can emit progress events
-- [ ] Events filtered by school
-- [ ] Error handling works
+- [x] Progress broadcaster created
+- [x] Can emit progress events
+- [x] Events filtered by school
+- [x] Error handling works
 
 ## Next Task
 

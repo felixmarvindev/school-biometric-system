@@ -25,15 +25,15 @@ Create REST API endpoint (`POST /api/v1/enrollment/start`) to start enrollment f
 
 ## Acceptance Criteria
 
-1. [ ] POST `/api/v1/enrollment/start` endpoint created
-2. [ ] Endpoint accepts: student_id, device_id, finger_id
-3. [ ] Endpoint validates input
-4. [ ] Endpoint calls enrollment service
-5. [ ] Endpoint returns enrollment session info
-6. [ ] Error responses are clear and helpful
-7. [ ] Authentication required
-8. [ ] Authorization checks (school_id)
-9. [ ] API documented (OpenAPI/Swagger)
+1. [x] POST `/api/v1/enrollment/start` endpoint created
+2. [x] Endpoint accepts: student_id, device_id, finger_id
+3. [x] Endpoint validates input
+4. [x] Endpoint calls enrollment service
+5. [x] Endpoint returns enrollment session info
+6. [x] Error responses are clear and helpful
+7. [x] Authentication required
+8. [x] Authorization checks (school_id)
+9. [x] API documented (OpenAPI/Swagger)
 
 ## Implementation Details
 
@@ -140,12 +140,12 @@ async def start_enrollment(
 
 ## Definition of Done
 
-- [ ] API endpoint created
-- [ ] Input validation works
-- [ ] Error handling works
-- [ ] Authentication/authorization works
-- [ ] API documented
-- [ ] Tests pass
+- [x] API endpoint created
+- [x] Input validation works
+- [x] Error handling works
+- [x] Authentication/authorization works
+- [x] API documented
+- [x] Tests pass
 
 ## Next Task
 

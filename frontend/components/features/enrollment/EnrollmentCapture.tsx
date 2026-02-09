@@ -1,18 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Fingerprint, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
+import { useState } from "react"
+import { Fingerprint, CheckCircle2, AlertCircle, RefreshCw, Wifi, WifiOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import type { StudentResponse } from "@/lib/api/students"
 import type { DeviceResponse } from "@/lib/api/devices"
 import { FINGERS } from "@/lib/utils/fingers"
+import { useEnrollmentProgress } from "@/lib/hooks/useEnrollmentProgress"
+import { cancelEnrollment } from "@/lib/api/enrollment"
 
 interface EnrollmentCaptureProps {
   student: StudentResponse
   device: DeviceResponse
   fingerId: number
+  sessionId?: string
   onComplete: () => void
   onRetry: () => void
   onCancel: () => void
@@ -32,57 +35,72 @@ export function EnrollmentCapture({
   student,
   device,
   fingerId,
+  sessionId,
   onComplete,
   onRetry,
   onCancel,
 }: EnrollmentCaptureProps) {
-  const [status, setStatus] = useState<CaptureStatus>("waiting")
-  const [progress, setProgress] = useState(0)
-  const [captureAttempt, setCaptureAttempt] = useState(1)
-  const maxAttempts = 3
-
   const fingerInfo = FINGERS.find((f) => f.id === fingerId)
 
-  // Simulate enrollment process
-  useEffect(() => {
-    if (status === "waiting") {
-      const timer = setTimeout(() => {
-        setStatus("scanning")
-        setProgress(20)
-      }, 2000)
-      return () => clearTimeout(timer)
-    }
+  // Connect to enrollment progress WebSocket
+  const {
+    progress,
+    status: wsStatus,
+    message: wsMessage,
+    qualityScore,
+    isConnected,
+    isConnecting,
+    error: wsError,
+  } = useEnrollmentProgress({
+    sessionId: sessionId || "",
+    autoConnect: !!sessionId,
+    onComplete: () => {
+      // Enrollment completed successfully
+      setTimeout(() => {
+        onComplete?.()
+      }, 2000) // Wait 2 seconds to show success message
+    },
+    onError: (error) => {
+      console.error("Enrollment error:", error)
+    },
+  })
 
-    if (status === "scanning") {
-      const timer = setTimeout(() => {
-        setStatus("processing")
-        setProgress(60)
-      }, 2500)
-      return () => clearTimeout(timer)
-    }
+  // Map WebSocket status to component status
+  const status: CaptureStatus = 
+    !sessionId || isConnecting
+      ? "waiting"
+      : wsStatus === "complete"
+        ? "success"
+        : wsStatus === "error"
+          ? "error"
+          : wsStatus === "capturing" || wsStatus === "processing"
+            ? "processing"
+            : wsStatus === "placing"
+              ? "scanning"
+              : "waiting"
 
-    if (status === "processing") {
-      const timer = setTimeout(() => {
-        // Simulate 85% success rate
-        const isSuccess = Math.random() > 0.15
-        if (isSuccess) {
-          setStatus("success")
-          setProgress(100)
-        } else {
-          setStatus("error")
-          setProgress(0)
-        }
-      }, 2000)
-      return () => clearTimeout(timer)
+  const displayMessage = sessionId ? wsMessage : "Preparing enrollment..."
+  const captureAttempt = 1 // Will be handled by WebSocket events
+  const maxAttempts = 3
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  const handleCancel = async () => {
+    if (sessionId && (status === "waiting" || status === "scanning" || status === "processing")) {
+      setIsCancelling(true)
+      try {
+        await cancelEnrollment(sessionId)
+      } catch (err) {
+        console.error("Failed to cancel enrollment:", err)
+      } finally {
+        setIsCancelling(false)
+      }
     }
-  }, [status])
+    onCancel?.()
+  }
 
   const handleRetry = () => {
-    if (captureAttempt < maxAttempts) {
-      setCaptureAttempt((prev) => prev + 1)
-      setStatus("waiting")
-      setProgress(0)
-    }
+    // Retry logic will be handled by parent component
+    onRetry?.()
   }
 
   return (
@@ -132,13 +150,41 @@ export function EnrollmentCapture({
           {STATUS_MESSAGES[status]}
         </h3>
         <p className="text-muted-foreground">
-          {status === "waiting" && `${fingerInfo?.name} on ${device.name}`}
-          {status === "scanning" && "Keep your finger steady..."}
-          {status === "processing" && "Almost done..."}
-          {status === "success" && `${fingerInfo?.name} has been enrolled for ${student.first_name}`}
-          {status === "error" && `Attempt ${captureAttempt} of ${maxAttempts} failed`}
+          {displayMessage}
+          {sessionId && (
+            <span className="block mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Session: {sessionId.substring(0, 8)}...
+            </span>
+          )}
+          {qualityScore !== null && status === "success" && (
+            <span className="block mt-1 text-xs text-green-600 dark:text-green-400">
+              Quality Score: {qualityScore}/100
+            </span>
+          )}
         </p>
       </div>
+
+      {/* WebSocket Connection Status */}
+      {sessionId && (
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          {isConnected ? (
+            <>
+              <Wifi className="size-3 text-green-600 dark:text-green-400" />
+              <span>Connected</span>
+            </>
+          ) : isConnecting ? (
+            <>
+              <WifiOff className="size-3 text-yellow-600 dark:text-yellow-400 animate-pulse" />
+              <span>Connecting...</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="size-3 text-red-600 dark:text-red-400" />
+              <span>{wsError || "Disconnected"}</span>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Progress Bar */}
       {status !== "success" && status !== "error" && (
@@ -191,8 +237,15 @@ export function EnrollmentCapture({
         )}
 
         {(status === "waiting" || status === "scanning" || status === "processing") && (
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
+          <Button variant="outline" onClick={handleCancel} disabled={isCancelling}>
+            {isCancelling ? (
+              <>
+                <Loader2 className="size-4 mr-2 animate-spin" />
+                Cancelling...
+              </>
+            ) : (
+              "Cancel"
+            )}
           </Button>
         )}
       </div>
