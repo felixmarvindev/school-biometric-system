@@ -297,6 +297,29 @@ class EnrollmentRepository:
         result = await self.db.execute(query)
         return result.scalars().all()
 
+    async def soft_delete_completed_by_student_device_finger(
+        self, school_id: int, student_id: int, device_id: int, finger_id: int
+    ) -> int:
+        """
+        Soft-delete completed enrollment sessions for the given student/device/finger.
+        Returns the number of sessions soft-deleted.
+        """
+        query = select(EnrollmentSession).where(
+            EnrollmentSession.school_id == school_id,
+            EnrollmentSession.student_id == student_id,
+            EnrollmentSession.device_id == device_id,
+            EnrollmentSession.finger_id == finger_id,
+            EnrollmentSession.status == EnrollmentStatus.COMPLETED.value,
+            EnrollmentSession.is_deleted == False,
+        )
+        result = await self.db.execute(query)
+        sessions = result.scalars().all()
+        for s in sessions:
+            s.is_deleted = True
+        if sessions:
+            await self.db.commit()
+        return len(sessions)
+
     async def get_enrolled_fingers_from_db(
         self, school_id: int, student_id: int, device_id: int
     ) -> list[int]:

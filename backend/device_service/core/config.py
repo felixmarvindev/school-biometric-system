@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # Template encryption (Fernet key - base64-encoded 32-byte key)
     # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-    TEMPLATE_ENCRYPTION_KEY: str = ""
+    TEMPLATE_ENCRYPTION_KEY: str = "5Il3rA9ofAwYk8Ca5o2FCHL3Gas8I9VBnYr3SX0vAIk="
 
     # CORS
     ALLOWED_ORIGINS: List[str] = [

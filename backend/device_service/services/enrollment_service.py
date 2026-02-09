@@ -302,6 +302,13 @@ class EnrollmentService:
                 code="DELETE_TEMPLATE_FAILED",
             )
 
+        await self.repository.soft_delete_completed_by_student_device_finger(
+            school_id=school_id,
+            student_id=student_id,
+            device_id=device_id,
+            finger_id=finger_id,
+        )
+
     async def get_enrollments_by_student(
         self, school_id: int, student_id: int
     ) -> list[EnrollmentSession]:
