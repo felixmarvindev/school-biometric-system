@@ -25,7 +25,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from device_service.core.database import AsyncSessionLocal
-from device_service.api.routes import devices_router, device_groups_router, websocket_router, enrollment_router
+from device_service.api.routes import (
+    devices_router,
+    device_groups_router,
+    websocket_router,
+    enrollment_router,
+    sync_router,
+)
 from device_service.services.device_health_check import DeviceHealthCheckService
 from device_service.services.device_info_sync import DeviceInfoSyncService
 
@@ -96,6 +102,7 @@ app.include_router(devices_router)
 app.include_router(device_groups_router)
 app.include_router(websocket_router)
 app.include_router(enrollment_router)
+app.include_router(sync_router)
 
 # CORS middleware
 app.add_middleware(

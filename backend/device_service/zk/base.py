@@ -379,6 +379,76 @@ class ZKDeviceConnection:
             self._is_connected = False
             return False
 
+    async def get_users(self) -> list:
+        """
+        Get list of users on the device.
+
+        Returns:
+            List of user objects with uid, user_id, name attributes
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        try:
+            users = await asyncio.to_thread(self.conn.get_users)
+            return list(users) if users else []
+        except Exception as e:
+            logger.warning(f"get_users failed for {self.ip}:{self.port}: {e}")
+            return []
+
+    async def set_user(
+        self,
+        uid: int,
+        name: str,
+        user_id: str,
+        privilege: int = 0,
+    ) -> bool:
+        """
+        Add or update a user on the device (sync student to device).
+
+        Args:
+            uid: Device UID (typically student ID as integer)
+            name: Display name (e.g. "AdmissionNumber - FirstName LastName")
+            user_id: User ID string on device (typically str(student_id))
+            privilege: Privilege level (0=normal user, 14=admin), default 0
+
+        Returns:
+            True if successful
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        try:
+            await asyncio.to_thread(
+                self.conn.set_user,
+                uid=uid,
+                name=name[:24] if len(name) > 24 else name,  # Device may limit name length
+                privilege=privilege,
+                user_id=user_id,
+            )
+            logger.info(f"set_user succeeded on {self.ip}:{self.port}: user_id={user_id}")
+            return True
+        except Exception as e:
+            logger.error(f"set_user failed for {self.ip}:{self.port}: {e}", exc_info=True)
+            raise
+
+    async def student_on_device(self, student_id: int) -> bool:
+        """
+        Check if a student (by ID) exists on the device.
+
+        Args:
+            student_id: Student ID (matched against user_id on device)
+
+        Returns:
+            True if user with user_id == str(student_id) exists
+        """
+        users = await self.get_users()
+        target = str(student_id)
+        for u in users:
+            if getattr(u, "user_id", None) == target:
+                return True
+        return False
+
     async def get_enrolled_finger_ids(self, user_id: str) -> list[int]:
         """
         Get list of finger IDs (0-9) that have templates enrolled for this user on the device.

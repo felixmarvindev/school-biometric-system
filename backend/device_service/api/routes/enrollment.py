@@ -20,6 +20,7 @@ from device_service.exceptions import (
     DeviceNotFoundError,
     EnrollmentError,
     EnrollmentInProgressError,
+    StudentNotOnDeviceError,
 )
 
 router = APIRouter(prefix="/api/v1/enrollment", tags=["enrollment"])
@@ -45,7 +46,7 @@ router = APIRouter(prefix="/api/v1/enrollment", tags=["enrollment"])
     """,
     responses={
         201: {"description": "Enrollment started successfully"},
-        400: {"description": "Invalid request"},
+        400: {"description": "Invalid request or student not synced to device (code: STUDENT_NOT_ON_DEVICE)"},
         404: {"description": "Student or device not found"},
         503: {"description": "Device is offline"},
     },
@@ -88,7 +89,12 @@ async def start_enrollment(
     except DeviceNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail={"message": str(e), "code": e.code},
+        )
+    except StudentNotOnDeviceError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"message": str(e), "code": e.code},
         )
     except DeviceOfflineError as e:
         raise HTTPException(

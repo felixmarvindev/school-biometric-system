@@ -17,6 +17,7 @@ from device_service.exceptions import (
     DeviceNotFoundError,
     EnrollmentError,
     EnrollmentInProgressError,
+    StudentNotOnDeviceError,
 )
 from shared.schemas.enrollment import EnrollmentSessionCreate, EnrollmentSessionUpdate
 from device_service.zk.enrollment import EnrollmentEvent, EnrollmentProgress
@@ -87,10 +88,16 @@ class EnrollmentService:
         # Check device is online
         if device.status != DeviceStatus.ONLINE:
             raise DeviceOfflineError(device_id)
-        
-        # Check for existing in-progress enrollment for this student/device/finger
-        # (Note: We'll add this check later if needed - for now allow multiple)
-        
+
+        # Get device connection early - needed for student-on-device check
+        conn = await self.connection_service.get_connection(device)
+        if not conn:
+            raise DeviceOfflineError(device_id)
+
+        # Ensure student is synced to device before enrollment (user-driven sync, no auto-sync)
+        if not await conn.student_on_device(student_id):
+            raise StudentNotOnDeviceError(student_id, device_id)
+
         # Create enrollment session
         session_id = str(uuid.uuid4())
         enrollment_session = await self.repository.create(
@@ -105,11 +112,6 @@ class EnrollmentService:
         )
         
         try:
-            # Get device connection
-            conn = await self.connection_service.get_connection(device)
-            if not conn:
-                raise DeviceOfflineError(device_id)
-
             # Update session status to IN_PROGRESS before starting
             enrollment_session.status = EnrollmentStatus.IN_PROGRESS.value
             await self.db.commit()

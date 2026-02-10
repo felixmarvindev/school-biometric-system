@@ -7,6 +7,7 @@ from device_service.core.config import settings
 # This is critical for the health check service which creates sessions independently
 from school_service.models.school import School
 from school_service.models.user import User
+from school_service.models.student import Student
 from device_service.models.device import Device
 from device_service.models.device_group import DeviceGroup
 from device_service.models.enrollment import EnrollmentSession
