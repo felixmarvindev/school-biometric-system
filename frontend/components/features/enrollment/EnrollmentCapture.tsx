@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import type { StudentResponse } from "@/lib/api/students"
 import type { DeviceResponse } from "@/lib/api/devices"
+import { DeviceStatusBadge } from "@/components/features/devices/DeviceStatusBadge"
 import { FINGERS } from "@/lib/utils/fingers"
 import { useEnrollmentProgress } from "@/lib/hooks/useEnrollmentProgress"
 import { cancelEnrollment } from "@/lib/api/enrollment"
@@ -261,7 +262,10 @@ export function EnrollmentCapture({
           </div>
           <div>
             <p className="text-gray-600 dark:text-gray-400">Device</p>
-            <p className="font-medium truncate text-gray-900 dark:text-gray-100">{device.name}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium truncate text-gray-900 dark:text-gray-100">{device.name}</p>
+              <DeviceStatusBadge status={device.status} />
+            </div>
           </div>
           <div>
             <p className="text-gray-600 dark:text-gray-400">Finger</p>

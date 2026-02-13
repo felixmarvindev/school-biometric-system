@@ -27,6 +27,7 @@ import {
   School,
   Loader2,
   AlertCircle,
+  Server,
 } from "lucide-react"
 import { fadeInUp, pageTransition } from "@/lib/animations/framer-motion"
 import { useAuthStore } from "@/lib/store/authStore"
@@ -39,6 +40,7 @@ import {
 import { getClass, type ClassResponse } from "@/lib/api/classes"
 import { getStream, type StreamResponse } from "@/lib/api/streams"
 import { formatDate, formatDateTime } from "@/lib/utils"
+import { SyncToDeviceDialog } from "@/components/features/students/SyncToDeviceDialog"
 
 export default function StudentDetailPage() {
   const router = useRouter()
@@ -52,6 +54,7 @@ export default function StudentDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showSyncDialog, setShowSyncDialog] = useState(false)
 
   useEffect(() => {
     if (!token || !studentId) return
@@ -190,6 +193,14 @@ export default function StudentDetailPage() {
             Back to Students
           </Button>
           <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowSyncDialog(true)}
+              className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+            >
+              <Server className="mr-2 h-4 w-4" />
+              Sync to Device
+            </Button>
             <Button
               variant="outline"
               onClick={handleEdit}
@@ -367,6 +378,14 @@ export default function StudentDetailPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Sync to Device Dialog */}
+      <SyncToDeviceDialog
+        open={showSyncDialog}
+        onOpenChange={setShowSyncDialog}
+        studentId={student.id}
+        studentName={`${student.first_name} ${student.last_name}`}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

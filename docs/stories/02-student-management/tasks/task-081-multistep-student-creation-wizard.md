@@ -1,5 +1,7 @@
 # Task 081: Multi-step Student Creation Wizard (Frontend)
 
+> **Note:** Superseded/refined by Task 085 (Multi-step Add Student Wizard) which specifies step-by-step saves, multi-device sync, and admission number uniqueness. Task 081 can be considered completed when 085 is done.
+
 ## Story/Phase
 - **Story**: Story 02: Student Management
 - **Phase**: Phase 5: Multi-step Student Creation

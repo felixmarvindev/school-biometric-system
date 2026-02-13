@@ -17,7 +17,7 @@ Add UI for syncing a student to a device. Can be used from student detail page o
 
 ## Acceptance Criteria
 
-1. [ ] "Sync to device" action on student detail page
-2. [ ] Device selector (online devices only)
-3. [ ] Call sync API, show success/error
+1. [x] "Sync to device" action on student detail page
+2. [x] Device selector (online devices only)
+3. [x] Call sync API, show success/error
 4. [ ] Optional: "Sync" step in StudentCreationWizard (Task 081)

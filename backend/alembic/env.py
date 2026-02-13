@@ -22,6 +22,7 @@ from school_service.models.stream import Stream  # noqa: F401
 from device_service.models.device import Device  # noqa: F401
 from device_service.models.device_group import DeviceGroup  # noqa: F401
 from device_service.models.enrollment import EnrollmentSession  # noqa: F401
+from device_service.models.fingerprint_template import FingerprintTemplate  # noqa: F401
 
 # this is the Alembic Config object
 config = context.config

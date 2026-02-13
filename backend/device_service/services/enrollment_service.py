@@ -10,6 +10,7 @@ from device_service.models.enrollment import EnrollmentSession, EnrollmentStatus
 from device_service.models.device import Device, DeviceStatus
 from device_service.repositories.enrollment_repository import EnrollmentRepository
 from device_service.repositories.device_repository import DeviceRepository
+from device_service.repositories.fingerprint_template_repository import FingerprintTemplateRepository
 from device_service.services.device_connection import DeviceConnectionService
 from device_service.services.enrollment_progress_broadcaster import enrollment_broadcaster
 from device_service.exceptions import (
@@ -48,6 +49,7 @@ class EnrollmentService:
         self.repository = EnrollmentRepository(db)
         self.device_repository = DeviceRepository(db)
         self.connection_service = DeviceConnectionService(db)
+        self.fingerprint_template_repository = FingerprintTemplateRepository(db)
 
     async def start_enrollment(
         self,
@@ -389,7 +391,19 @@ class EnrollmentService:
                 f"Failed to update enrollment session {enrollment_id}",
                 code="ENROLLMENT_UPDATE_ERROR"
             )
-        
+
+        # Also store in fingerprint_templates for canonical store / transfer (Task 079)
+        if template_data:
+            await self.fingerprint_template_repository.create(
+                student_id=enrollment_session.student_id,
+                device_id=enrollment_session.device_id,
+                finger_id=enrollment_session.finger_id,
+                encrypted_data=template_data,
+                school_id=school_id or enrollment_session.school_id,
+                quality_score=quality_score,
+                source_enrollment_session_id=enrollment_session.id,
+            )
+
         # Broadcast completion event
         if school_id:
             await enrollment_broadcaster.broadcast_completion(

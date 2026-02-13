@@ -95,10 +95,18 @@ export async function startEnrollment(
         throw new EnrollmentApiError(message, statusCode, errorData?.code, fieldErrors);
       }
 
-      // Handle structured error responses
+      // Handle structured error responses (detail may be { message, code })
       if (errorData?.detail || errorData?.message) {
-        const message = errorData.detail || errorData.message || `Failed to start enrollment (${statusCode})`;
-        throw new EnrollmentApiError(message, statusCode, errorData.code);
+        const raw = errorData.detail || errorData.message;
+        const message =
+          typeof raw === "object" && raw && "message" in raw
+            ? String((raw as { message: string }).message)
+            : String(raw || `Failed to start enrollment (${statusCode})`);
+        const code =
+          typeof raw === "object" && raw && "code" in raw
+            ? (raw as { code?: string }).code
+            : errorData.code;
+        throw new EnrollmentApiError(message, statusCode, code);
       }
 
       // Handle HTTP status codes with friendly messages

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   User,
   Server,
@@ -16,16 +16,20 @@ import {
   Hash,
   Hand,
   Loader2,
+  AlertCircle,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { StudentSelector } from "./StudentSelector"
 import { DeviceSelector } from "./DeviceSelector"
 import { FingerSelector } from "./FingerSelector"
 import { EnrollmentCapture } from "./EnrollmentCapture"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { getSyncStatus, syncStudentToDevice, SyncApiError } from "@/lib/api/sync"
 import type { StudentResponse } from "@/lib/api/students"
 import type { DeviceResponse } from "@/lib/api/devices"
+import { DeviceStatusBadge } from "@/components/features/devices/DeviceStatusBadge"
 import { getFingerInfo, FINGERS } from "@/lib/utils/fingers"
 
 const STEPS = [
@@ -52,12 +56,65 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
   const [enrollmentSession, setEnrollmentSession] = useState<{ session_id: string; status: string; started_at: string } | null>(null)
   const [isStartingEnrollment, setIsStartingEnrollment] = useState(false)
 
+  // Sync status for step 2: null = not checked, { synced } = checked
+  const [syncStatus, setSyncStatus] = useState<{ synced: boolean } | null>(null)
+  const [isCheckingSync, setIsCheckingSync] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selectedStudent || !selectedDevice || selectedDevice.status !== "online") {
+      setSyncStatus(null)
+      setSyncError(null)
+      return
+    }
+    let cancelled = false
+    setIsCheckingSync(true)
+    setSyncError(null)
+    getSyncStatus(selectedDevice.id, selectedStudent.id)
+      .then((res) => {
+        if (!cancelled) setSyncStatus({ synced: res.synced })
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setSyncStatus(null)
+          setSyncError(err instanceof SyncApiError ? err.message : "Failed to check sync status")
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsCheckingSync(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedStudent?.id, selectedDevice?.id])
+
+  const handleSyncStudent = async () => {
+    if (!selectedStudent || !selectedDevice) return
+    setIsSyncing(true)
+    setSyncError(null)
+    try {
+      await syncStudentToDevice(selectedStudent.id, selectedDevice.id)
+      setSyncStatus({ synced: true })
+      setSyncError(null)
+    } catch (err) {
+      const msg = err instanceof SyncApiError ? err.message : "Sync failed"
+      setSyncError(msg)
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   const canProceed = () => {
     switch (currentStep) {
       case 1:
         return selectedStudent !== null
       case 2:
-        return selectedDevice !== null && selectedDevice.status === "online"
+        return (
+          selectedDevice !== null &&
+          selectedDevice.status === "online" &&
+          (syncStatus === null ? false : syncStatus.synced)
+        )
       case 3:
         return selectedFinger !== null
       default:
@@ -141,6 +198,8 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
   const clearDevice = () => {
     setSelectedDevice(null)
     setSelectedFinger(null)
+    setSyncStatus(null)
+    setSyncError(null)
     if (currentStep > 2) setCurrentStep(2)
   }
 
@@ -304,13 +363,9 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
                         <Server className="size-5" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-gray-100">{selectedDevice.name}</p>
-                        <div className="flex items-center gap-1">
-                          <span className="relative flex size-2">
-                            <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
-                            <span className="relative inline-flex size-2 rounded-full bg-green-600" />
-                          </span>
-                          <span className="text-xs text-green-600 dark:text-green-400">Online</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100">{selectedDevice.name}</p>
+                          <DeviceStatusBadge status={selectedDevice.status} />
                         </div>
                       </div>
                     </div>
@@ -423,7 +478,64 @@ export function EnrollmentWizard({ onStartEnrollment }: EnrollmentWizardProps = 
           {currentStep === 1 && <StudentSelector selectedStudent={selectedStudent} onSelect={setSelectedStudent} />}
 
           {/* Step 2: Device Selection */}
-          {currentStep === 2 && <DeviceSelector selectedDevice={selectedDevice} onSelect={setSelectedDevice} />}
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <DeviceSelector selectedDevice={selectedDevice} onSelect={setSelectedDevice} />
+              {selectedStudent && selectedDevice && selectedDevice.status === "online" && (
+                <>
+                  {isCheckingSync && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                      <Loader2 className="size-4 animate-spin" />
+                      Checking if student is synced...
+                    </div>
+                  )}
+                  {!isCheckingSync && syncStatus && !syncStatus.synced && (
+                    <Alert
+                      variant="default"
+                      className="border-yellow-500/50 bg-yellow-50/50 dark:bg-yellow-900/20 dark:border-yellow-500/50"
+                    >
+                      <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <AlertDescription>
+                        <div className="space-y-3">
+                          <p className="font-medium text-yellow-800 dark:text-yellow-200">
+                            Student is not synced to this device. Would you like to sync now?
+                          </p>
+                          {syncError && (
+                            <p className="text-sm text-red-600 dark:text-red-400">{syncError}</p>
+                          )}
+                          <div className="flex gap-3 mt-2">
+                            <Button
+                              size="sm"
+                              onClick={handleSyncStudent}
+                              disabled={isSyncing}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {isSyncing ? (
+                                <>
+                                  <Loader2 className="mr-2 size-4 animate-spin" />
+                                  Syncing...
+                                </>
+                              ) : (
+                                "Sync Student"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={clearDevice}
+                              disabled={isSyncing}
+                            >
+                              Choose Different Device
+                            </Button>
+                          </div>
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           {/* Step 3: Finger Selection */}
           {currentStep === 3 && (

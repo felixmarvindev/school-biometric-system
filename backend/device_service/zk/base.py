@@ -11,6 +11,7 @@ import logging
 import time
 from typing import Optional, Any, Dict
 from zk import ZK
+from zk.finger import Finger
 
 # pyzk exception handling - import from zk.exception module
 # Library defines: ZKError (base), ZKErrorConnection, ZKErrorResponse, ZKNetworkError
@@ -578,6 +579,48 @@ class ZKDeviceConnection:
         except Exception as e:
             logger.error(f"delete_user_template failed: {e}", exc_info=True)
             return False
+
+    async def set_user_template(
+        self,
+        user_id: str,
+        finger_id: int,
+        template_bytes: bytes,
+        uid: Optional[int] = None,
+    ) -> bool:
+        """
+        Write a fingerprint template to the device (for template transfer).
+
+        Uses pyzk save_user_template. The user must already exist on the device.
+
+        Args:
+            user_id: User ID string on device (e.g. str(student_id))
+            finger_id: Finger index (0-9)
+            template_bytes: Raw template bytes from storage (decrypted)
+            uid: Optional device UID; if None, resolved from get_users by user_id
+
+        Returns:
+            True if write succeeded
+
+        Raises:
+            RuntimeError: If device not connected
+            Exception: On device error (e.g. user not found)
+        """
+        if not self.is_connected or self.conn is None:
+            raise RuntimeError("Device not connected")
+
+        users = await self.get_users()
+        user_obj = None
+        for u in users:
+            if getattr(u, "user_id", None) == user_id:
+                user_obj = u
+                break
+        if not user_obj:
+            raise ValueError(f"User {user_id} not found on device; sync student first")
+
+        finger = Finger(uid=user_obj.uid, fid=finger_id, valid=1, template=template_bytes)
+        await asyncio.to_thread(self.conn.save_user_template, user_obj, [finger])
+        logger.info(f"set_user_template succeeded: user_id={user_id} finger_id={finger_id}")
+        return True
 
     async def start_enrollment(self, user_id: int, finger_id: int = 0) -> bool:
         """

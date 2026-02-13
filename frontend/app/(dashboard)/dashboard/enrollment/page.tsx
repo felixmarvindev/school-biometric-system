@@ -47,6 +47,11 @@ export default function EnrollmentPage() {
             description: 'Student or device not found. Please check your selections and try again.',
             duration: 5000,
           });
+        } else if (error.code === 'STUDENT_NOT_ON_DEVICE' || error.statusCode === 400) {
+          toast.error('Student Not Synced', {
+            description: error.message || 'Student is not synced to this device. Please sync the student first in the device selection step.',
+            duration: 6000,
+          });
         } else if (error.statusCode === 409) {
           toast.error('Enrollment In Progress', {
             description: 'An enrollment session is already in progress. Please wait for it to complete or cancel it first.',

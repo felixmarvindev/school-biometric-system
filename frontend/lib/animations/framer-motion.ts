@@ -102,6 +102,23 @@ export const slideInLeft: Variants = {
 };
 
 /**
+ * Slide in (horizontal) - for step transitions
+ */
+export const slideIn: Variants = {
+  initial: { opacity: 0, x: 20 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: ANIMATION_DURATION.normal, ease: EASING.easeOut },
+  },
+  exit: {
+    opacity: 0,
+    x: -20,
+    transition: { duration: ANIMATION_DURATION.fast },
+  },
+};
+
+/**
  * Slide in from right
  */
 export const slideInRight: Variants = {

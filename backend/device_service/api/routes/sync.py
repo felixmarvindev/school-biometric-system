@@ -33,6 +33,15 @@ class SyncSuccessResponse(BaseModel):
     student_id: int
 
 
+class TransferTemplatesResponse(BaseModel):
+    """Response for template transfer."""
+
+    message: str
+    device_id: int
+    student_id: int
+    templates_transferred: int
+
+
 @router.post(
     "/students/{student_id}/devices/{device_id}",
     response_model=SyncSuccessResponse,
@@ -109,6 +118,53 @@ async def get_sync_status(
             student_id=student_id,
             synced=synced,
         )
+    except DeviceNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DeviceOfflineError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)
+        )
+
+
+@router.post(
+    "/students/{student_id}/devices/{device_id}/transfer-templates",
+    response_model=TransferTemplatesResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Transfer templates to device",
+    description="""
+    Push stored fingerprint templates for a student from the database to a target device.
+    
+    If the student is not yet on the device, they are synced first. Templates are decrypted
+    and written to the device. Use this to recover from device loss by transferring to a new device.
+    """,
+    responses={
+        200: {"description": "Templates transferred (count may be 0 if none stored)"},
+        404: {"description": "Student or device not found"},
+        503: {"description": "Device is offline"},
+    },
+)
+async def transfer_templates_to_device(
+    student_id: int,
+    device_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Transfer fingerprint templates for a student to a device."""
+    sync_service = SyncService(db)
+    try:
+        count = await sync_service.transfer_templates_to_device(
+            student_id=student_id,
+            device_id=device_id,
+            school_id=current_user.school_id,
+        )
+        return TransferTemplatesResponse(
+            message="Templates transferred successfully",
+            device_id=device_id,
+            student_id=student_id,
+            templates_transferred=count,
+        )
+    except StudentNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except DeviceNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except DeviceOfflineError as e:

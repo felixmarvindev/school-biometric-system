@@ -18,15 +18,15 @@ When selecting a device in the Enrollment wizard, check if the student is synced
 
 ## Acceptance Criteria
 
-1. [ ] When user selects a device in Step 2 (Choose Device) and a student is already selected:
+1. [x] When user selects a device in Step 2 (Choose Device) and a student is already selected:
    - Call GET `/api/v1/sync/devices/{device_id}/students/{student_id}/status` (or equivalent)
    - If `synced: false`: show inline message/banner
-2. [ ] Message: "Student is not synced to this device. Would you like to sync now?"
-3. [ ] Actions: [Sync Student] button, optionally [Choose Different Device] or [Dismiss]
-4. [ ] [Sync Student] calls sync API; on success, show "Student synced successfully" and hide the message
-5. [ ] User cannot proceed to finger selection (or Start Capture) until student is synced OR user chooses a different device
-6. [ ] No automatic sync - user explicitly clicks [Sync Student]
-7. [ ] If sync fails, show error and allow retry or device change
+2. [x] Message: "Student is not synced to this device. Would you like to sync now?"
+3. [x] Actions: [Sync Student] button, [Choose Different Device]
+4. [x] [Sync Student] calls sync API; on success, hide the message and allow proceed
+5. [x] User cannot proceed to finger selection until student is synced OR user chooses a different device
+6. [x] No automatic sync - user explicitly clicks [Sync Student]
+7. [x] If sync fails, show error and allow retry or device change
 
 ## Implementation Notes
 

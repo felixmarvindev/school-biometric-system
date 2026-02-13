@@ -11,6 +11,7 @@ from school_service.models.student import Student
 from device_service.models.device import Device
 from device_service.models.device_group import DeviceGroup
 from device_service.models.enrollment import EnrollmentSession
+from device_service.models.fingerprint_template import FingerprintTemplate
 
 # Create async engine
 engine = create_async_engine(
