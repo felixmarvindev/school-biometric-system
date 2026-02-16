@@ -34,18 +34,20 @@ from device_service.api.routes import (
 )
 from device_service.services.device_health_check import DeviceHealthCheckService
 from device_service.services.device_info_sync import DeviceInfoSyncService
+from device_service.services.attendance_poll_service import AttendancePollService
 
 logger = logging.getLogger(__name__)
 
 # Global service instances
 health_check_service: DeviceHealthCheckService | None = None
 info_sync_service: DeviceInfoSyncService | None = None
+attendance_poll_service: AttendancePollService | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown."""
-    global health_check_service, info_sync_service
+    global health_check_service, info_sync_service, attendance_poll_service
     
     # Startup
     logger.info("Starting Device Service...")
@@ -66,10 +68,26 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to start device info sync service: {e}", exc_info=True)
     
+    # Start attendance poll service
+    try:
+        attendance_poll_service = AttendancePollService()
+        await attendance_poll_service.start()
+        logger.info("Attendance poll service started")
+    except Exception as e:
+        logger.error(f"Failed to start attendance poll service: {e}", exc_info=True)
+    
     yield
     
     # Shutdown
     logger.info("Shutting down Device Service...")
+    
+    # Stop attendance poll service
+    if attendance_poll_service:
+        try:
+            await attendance_poll_service.stop()
+            logger.info("Attendance poll service stopped")
+        except Exception as e:
+            logger.error(f"Error stopping attendance poll service: {e}", exc_info=True)
     
     # Stop device info sync service
     if info_sync_service:
@@ -133,5 +151,5 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8002, reload=True, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8002, reload=True, log_level="warning")
 

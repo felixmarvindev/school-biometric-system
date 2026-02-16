@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     DEVICE_CONNECTION_POOL_SIZE: int = 10  # Maximum number of concurrent device connections
     DEVICE_OMIT_PING: bool = False  # Whether to omit ping during connection (some devices need this)
 
+    # Attendance polling
+    ATTENDANCE_POLL_INTERVAL: int = 1  # Poll interval in seconds (default: 2 minutes)
+    ATTENDANCE_POLL_CONCURRENCY: int = 5  # Max devices polled concurrently
+
+    # Attendance entry/exit logic
+    ATTENDANCE_DUPLICATE_WINDOW_MINUTES: int = 30  # Taps within this window are duplicates
+    ATTENDANCE_TIMEZONE: str = "Africa/Nairobi"  # Timezone for "same day" boundary
+
 
     # Security (shared with school_service)
     SECRET_KEY: str = "dev-secret-key-change-in-production"

@@ -1,2 +1,1 @@
-"""Business logic services for Attendance Service."""
-
+"""Services for Attendance Service."""

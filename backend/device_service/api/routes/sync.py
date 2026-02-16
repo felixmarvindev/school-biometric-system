@@ -6,8 +6,10 @@ from pydantic import BaseModel
 
 from device_service.core.database import get_db
 from device_service.services.sync_service import SyncService
+from device_service.services.attendance_ingestion_service import AttendanceIngestionService
 from device_service.api.dependencies import get_current_user
 from shared.schemas.user import UserResponse
+from shared.schemas.attendance import IngestionSummaryResponse
 from device_service.exceptions import (
     DeviceOfflineError,
     DeviceNotFoundError,
@@ -117,6 +119,48 @@ async def get_sync_status(
             device_id=device_id,
             student_id=student_id,
             synced=synced,
+        )
+    except DeviceNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except DeviceOfflineError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e)
+        )
+
+
+@router.post(
+    "/devices/{device_id}/ingest-attendance",
+    response_model=IngestionSummaryResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Ingest attendance logs from device",
+    description="""
+    Fetch attendance logs from the device and store new records in the database.
+    Duplicates are skipped based on (device_id, device_user_id, occurred_at).
+    Device must be online.
+    """,
+    responses={
+        200: {"description": "Ingestion complete"},
+        404: {"description": "Device not found"},
+        503: {"description": "Device is offline"},
+    },
+)
+async def ingest_attendance(
+    device_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Ingest attendance logs from device into database."""
+    service = AttendanceIngestionService(db)
+    try:
+        summary = await service.ingest_for_device(
+            device_id=device_id,
+            school_id=current_user.school_id,
+        )
+        return IngestionSummaryResponse(
+            inserted=summary.inserted,
+            skipped=summary.skipped,
+            duplicates_filtered=summary.duplicates_filtered,
+            total=summary.total,
         )
     except DeviceNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -17,11 +17,11 @@ Add a periodic background service that polls online devices for new attendance l
 
 ## Acceptance Criteria
 
-1. [ ] Background poller runs on an interval (configurable, e.g. every 1–5 minutes).
-2. [ ] Polls only online devices (or uses connection test before polling).
-3. [ ] Uses the ingestion pipeline from Task 058.
+1. [x] Background poller runs on an interval (configurable, e.g. every 1–5 minutes).
+2. [x] Polls only online devices (or uses connection test before polling).
+3. [x] Uses the ingestion pipeline from Task 058.
 4. [ ] Emits optional WebSocket events for new attendance records (can be a follow-up).
-5. [ ] Graceful shutdown (stops task on app shutdown).
+5. [x] Graceful shutdown (stops task on app shutdown).
 
 ## Notes
 

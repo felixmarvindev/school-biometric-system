@@ -349,6 +349,10 @@ class EnrollmentService:
             return None
         return await self.cancel_enrollment(enrollment_session.id, school_id)
 
+    async def get_successful_enrollment_count(self, school_id: int) -> int:
+        """Return number of completed enrollment sessions for a school."""
+        return await self.repository.count_completed(school_id)
+
     async def complete_enrollment(
         self,
         enrollment_id: int,

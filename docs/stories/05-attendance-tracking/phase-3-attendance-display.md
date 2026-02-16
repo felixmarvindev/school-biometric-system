@@ -12,32 +12,33 @@ Display real-time attendance events in a live dashboard.
 
 - ✅ Phase 2 complete (entry/exit logic working)
 
-## Technical Components
+## Tasks
 
-### Backend Changes
+| # | Task | Type | Description | Status |
+|---|------|------|-------------|--------|
+| 064 | [Attendance Records API](tasks/task-064-attendance-records-api.md) | Backend | GET endpoints for listing, stats, and student detail | ✅ Done |
+| 065 | [WebSocket Attendance Events](tasks/task-065-websocket-attendance-events.md) | Backend | Emit real-time events via native WebSocket after ingestion | ✅ Done |
+| 066 | [Attendance Page Layout & Stats](tasks/task-066-attendance-page-layout-stats.md) | Frontend | Page shell, stat cards, tab switcher | ✅ Done |
+| 067 | [Live Attendance Feed](tasks/task-067-live-attendance-feed.md) | Frontend | Real-time event list with WebSocket subscription | ✅ Done |
 
-- [ ] Emit attendance events via WebSocket
-- [ ] Include event_type in WebSocket payload
+### Task Dependencies
 
-### Frontend Changes
+```
+064 ──┬──► 066 ──► 067
+065 ──┘          ↗
+```
 
-- [ ] Create attendance dashboard page
-- [ ] Create real-time attendance feed component
-- [ ] Subscribe to attendance WebSocket events
-- [ ] Display events in list (student, time, device, type)
-- [ ] Add auto-scroll for new events
-- [ ] Show IN/OUT indicators (green/red)
-- [ ] Add filtering options
+Backend tasks (064, 065) can run in parallel. Frontend page (066) needs the API. Live feed (067) needs both the page and WebSocket.
 
 ## Visual Checkpoints
 
 - [ ] Attendance dashboard shows live feed
 - [ ] Events appear instantly as they happen
-- [ ] IN/OUT indicators are clear
+- [ ] IN/OUT indicators are clear (green/amber badges)
 - [ ] List updates in real-time
-- [ ] Filtering works correctly
+- [ ] Stats update in real-time
+- [ ] Device filter works
 
 ## Next Phase
 
-**Phase 4: Attendance History** - View historical attendance records.
-
+**Phase 4: Attendance History** - Filterable table and student detail panel.

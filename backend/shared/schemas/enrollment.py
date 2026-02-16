@@ -111,3 +111,13 @@ class EnrollmentListResponse(BaseModel):
     """List of enrollment records for UI and sync readiness."""
 
     enrollments: list[EnrollmentRecordSummary]
+
+
+class EnrollmentCountResponse(BaseModel):
+    """Summary response containing successful enrollment count."""
+
+    successful_enrollments: int = Field(
+        ...,
+        ge=0,
+        description="Number of completed enrollment sessions for the school",
+    )

@@ -27,6 +27,10 @@ export interface EnrollmentStartResponse {
   started_at: string;
 }
 
+export interface EnrollmentCountResponse {
+  successful_enrollments: number;
+}
+
 export interface ApiError {
   detail?: string;
   message?: string;
@@ -218,4 +222,24 @@ export async function cancelEnrollment(sessionId: string): Promise<void> {
     }
     throw new EnrollmentApiError('An unexpected error occurred', 500);
   }
+}
+
+/**
+ * Get successful enrollment count for dashboard statistics.
+ *
+ * @param token - JWT authentication token
+ * @returns Promise resolving to successful enrollment count
+ */
+export async function getSuccessfulEnrollmentCount(token: string): Promise<number> {
+  const response = await axios.get<EnrollmentCountResponse>(
+    `${API_BASE_URL}/api/v1/enrollment/stats/count`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data.successful_enrollments;
 }

@@ -9,7 +9,7 @@ asyncio.to_thread to make it async-compatible.
 import asyncio
 import logging
 import time
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 from zk import ZK
 from zk.finger import Finger
 
@@ -396,6 +396,59 @@ class ZKDeviceConnection:
         except Exception as e:
             logger.warning(f"get_users failed for {self.ip}:{self.port}: {e}")
             return []
+
+    async def get_attendance_logs(self) -> List[Dict[str, Any]]:
+        """
+        Fetch attendance logs from the device.
+
+        Returns a normalized list of dicts per record:
+        - user_id: str (device user ID)
+        - timestamp: datetime
+        - punch: int or None (punch type/status if available)
+        - device_serial: str or None (if available from device)
+
+        Returns empty list on error (offline, auth failure, etc.) without raising.
+        """
+        if not self.is_connected or self.conn is None:
+            logger.warning("get_attendance_logs: device not connected")
+            return []
+
+        try:
+            raw = await asyncio.to_thread(self.conn.get_attendance)
+            records = list(raw) if raw else []
+        except (ZKError, ZKErrorConnection, ZKErrorResponse, ZKNetworkError) as e:
+            logger.warning(f"get_attendance_logs failed for {self.ip}:{self.port}: {e}")
+            return []
+        except Exception as e:
+            logger.error(
+                f"get_attendance_logs unexpected error for {self.ip}:{self.port}: {e}",
+                exc_info=True,
+            )
+            return []
+
+        device_serial: Optional[str] = None
+        try:
+            device_serial = await self.get_serial_number()
+        except Exception:
+            pass
+
+        result: List[Dict[str, Any]] = []
+        for rec in records:
+            try:
+                ts = getattr(rec, "timestamp", None)
+                uid = getattr(rec, "user_id", None) or getattr(rec, "uid", None)
+                if uid is not None:
+                    uid = str(uid)
+                punch = getattr(rec, "punch", None)
+                result.append({
+                    "user_id": uid or "",
+                    "timestamp": ts,
+                    "punch": punch,
+                    "device_serial": device_serial,
+                })
+            except Exception as e:
+                logger.debug(f"Skip malformed attendance record: {e}")
+        return result
 
     async def set_user(
         self,

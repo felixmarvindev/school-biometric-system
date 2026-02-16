@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from device_service.api.dependencies import get_current_user_ws
 from device_service.services.device_status_broadcaster import broadcaster
 from device_service.services.enrollment_progress_broadcaster import enrollment_broadcaster
+from device_service.services.attendance_broadcaster import attendance_broadcaster
 
 logger = logging.getLogger(__name__)
 
@@ -204,5 +205,73 @@ async def enrollment_progress_websocket(
         await websocket.close(code=WS_1008_POLICY_VIOLATION)
     except Exception as e:
         logger.error(f"Enrollment WebSocket connection error: {e}", exc_info=True)
+        await websocket.close(code=WS_1011_INTERNAL_ERROR)
+
+
+@router.websocket("/ws/attendance")
+async def attendance_websocket(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT authentication token"),
+):
+    """
+    WebSocket endpoint for real-time attendance events.
+
+    Clients connect and receive live attendance events for their school.
+
+    Authentication is required via query parameter: `?token=<jwt_token>`
+
+    Messages sent to client:
+    - {"type": "connected", "message": "...", "school_id": 1}
+    - {"type": "attendance_events", "events": [...], "count": N, "timestamp": "..."}
+      Each event: {id, student_id, student_name, admission_number, class_name,
+                   device_id, device_name, event_type, occurred_at}
+
+    Example connection:
+        ws://localhost:8002/ws/attendance?token=<jwt_token>
+    """
+    try:
+        await websocket.accept()
+    except Exception as accept_err:
+        logger.error(f"Failed to accept attendance WebSocket: {accept_err}", exc_info=True)
+        return
+
+    try:
+        user = await get_current_user_ws(token)
+        if not user:
+            await websocket.close(code=WS_1008_POLICY_VIOLATION, reason="Authentication failed")
+            return
+
+        school_id = user.school_id
+        attendance_broadcaster.register(websocket, school_id)
+
+        try:
+            await websocket.send_json({
+                "type": "connected",
+                "message": "Connected to attendance events",
+                "school_id": school_id,
+            })
+
+            logger.info(f"Attendance WS client connected: user_id={user.id}, school_id={school_id}")
+
+            while True:
+                try:
+                    data = await websocket.receive_text()
+                    if data == "ping":
+                        await websocket.send_json({"type": "pong"})
+                except WebSocketDisconnect:
+                    break
+
+        except WebSocketDisconnect:
+            logger.info(f"Attendance WS client disconnected: user_id={user.id}, school_id={school_id}")
+        except Exception as e:
+            logger.error(f"Attendance WebSocket error: {e}", exc_info=True)
+        finally:
+            attendance_broadcaster.disconnect(websocket, school_id)
+
+    except HTTPException as e:
+        logger.warning(f"Attendance WebSocket authentication failed: {e.detail}")
+        await websocket.close(code=WS_1008_POLICY_VIOLATION)
+    except Exception as e:
+        logger.error(f"Attendance WebSocket connection error: {e}", exc_info=True)
         await websocket.close(code=WS_1011_INTERNAL_ERROR)
 

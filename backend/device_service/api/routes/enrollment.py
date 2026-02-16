@@ -11,6 +11,7 @@ from shared.schemas.enrollment import (
     EnrollmentStartResponse,
     EnrollmentSessionResponse,
     EnrolledFingersResponse,
+    EnrollmentCountResponse,
     EnrollmentRecordSummary,
     EnrollmentListResponse,
 )
@@ -24,6 +25,24 @@ from device_service.exceptions import (
 )
 
 router = APIRouter(prefix="/api/v1/enrollment", tags=["enrollment"])
+
+
+@router.get(
+    "/stats/count",
+    response_model=EnrollmentCountResponse,
+    summary="Get successful enrollment count",
+    description="Return count of completed enrollment sessions for the authenticated user's school.",
+)
+async def get_successful_enrollment_count(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return number of successful enrollments for dashboard stats."""
+    enrollment_service = EnrollmentService(db)
+    count = await enrollment_service.get_successful_enrollment_count(
+        school_id=current_user.school_id
+    )
+    return EnrollmentCountResponse(successful_enrollments=count)
 
 
 @router.post(

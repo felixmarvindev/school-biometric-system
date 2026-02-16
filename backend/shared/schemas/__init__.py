@@ -1,5 +1,14 @@
 """Shared Pydantic schemas used across services."""
 
+from shared.schemas.attendance import (
+    EventTypeEnum,
+    AttendanceRecordCreate,
+    AttendanceRecordResponse,
+    AttendanceEventResponse,
+    PaginatedAttendanceResponse,
+    AttendanceStatsResponse,
+    IngestionSummaryResponse,
+)
 from shared.schemas.enrollment import (
     EnrollmentStatus,
     EnrollmentSessionBase,
@@ -8,9 +17,17 @@ from shared.schemas.enrollment import (
     EnrollmentSessionResponse,
     EnrollmentStartRequest,
     EnrollmentStartResponse,
+    EnrollmentCountResponse,
 )
 
 __all__ = [
+    "EventTypeEnum",
+    "AttendanceRecordCreate",
+    "AttendanceRecordResponse",
+    "AttendanceEventResponse",
+    "PaginatedAttendanceResponse",
+    "AttendanceStatsResponse",
+    "IngestionSummaryResponse",
     "EnrollmentStatus",
     "EnrollmentSessionBase",
     "EnrollmentSessionCreate",
@@ -18,4 +35,5 @@ __all__ = [
     "EnrollmentSessionResponse",
     "EnrollmentStartRequest",
     "EnrollmentStartResponse",
+    "EnrollmentCountResponse",
 ]

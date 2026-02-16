@@ -1,7 +1,7 @@
 """Service for fetching device information from real ZKTeco devices."""
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from device_service.models.device import Device
@@ -200,3 +200,31 @@ class DeviceInfoService:
         })
 
         return info
+
+    async def fetch_attendance_logs(self, device: Device) -> List[Dict[str, Any]]:
+        """
+        Fetch attendance logs from the device.
+
+        Returns a list of normalized dicts per record:
+        - user_id: str
+        - timestamp: datetime
+        - punch: int or None
+        - device_serial: str or None
+
+        Returns empty list if device is offline or on error (graceful, no raise).
+        """
+        conn = await self.connection_service.get_connection(device)
+        if not conn:
+            logger.warning(f"Cannot connect to device {device.id} to fetch attendance logs")
+            return []
+
+        try:
+            logs = await conn.get_attendance_logs()
+            logger.debug(f"Fetched {len(logs)} attendance logs from device {device.id}")
+            return logs
+        except Exception as e:
+            logger.error(
+                f"Error fetching attendance logs from device {device.id}: {e}",
+                exc_info=True,
+            )
+            return []

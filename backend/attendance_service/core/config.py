@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379/3"
 
+    # Security (shared with other services)
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ALGORITHM: str = "HS256"
+
+    # Attendance
+    ATTENDANCE_TIMEZONE: str = "Africa/Nairobi"
+
     # CORS
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",

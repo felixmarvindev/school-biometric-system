@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from attendance_service.core.config import settings
+from attendance_service.api.routes.attendance import router as attendance_router
 
 app = FastAPI(
     title="School Biometric System - Attendance Service",
@@ -30,6 +31,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register routes
+app.include_router(attendance_router)
 
 
 @app.get("/")

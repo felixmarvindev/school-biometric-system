@@ -17,9 +17,9 @@ Implement real device attendance log fetching using the ZKTeco integration (pyzk
 
 ## Acceptance Criteria
 
-1. [ ] A service method exists to fetch attendance logs from a device using the ZKTeco connection wrapper.
-2. [ ] Fetching logs is **async-safe** (wrap pyzk sync calls with `asyncio.to_thread`).
-3. [ ] Handles offline/auth errors gracefully (returns a clear error / empty result without crashing worker).
+1. [x] A service method exists to fetch attendance logs from a device using the ZKTeco connection wrapper.
+2. [x] Fetching logs is **async-safe** (wrap pyzk sync calls with `asyncio.to_thread`).
+3. [x] Handles offline/auth errors gracefully (returns a clear error / empty result without crashing worker).
 4. [ ] Works with real device during testing (at least one successful fetch).
 
 ## Implementation Notes

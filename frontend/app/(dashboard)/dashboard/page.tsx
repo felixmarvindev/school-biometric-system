@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Users, Smartphone, UserPlus } from "lucide-react"
+import { Users, Smartphone, UserPlus, Clock3 } from "lucide-react"
 import { staggerContainer } from "@/lib/animations/framer-motion"
 import {
   StatCard,
@@ -15,55 +15,97 @@ import {
 } from "@/components/features/dashboard"
 import { useAuthStore } from "@/lib/store/authStore"
 import { getMySchool, type SchoolResponse } from "@/lib/api/schools"
-import { CheckCircle2, Mail, Settings } from "lucide-react"
+import { listStudents } from "@/lib/api/students"
+import { listDevices } from "@/lib/api/devices"
+import { getAttendanceStats } from "@/lib/api/attendance"
+import { getSuccessfulEnrollmentCount } from "@/lib/api/enrollment"
 import type { UserResponse } from "@/lib/api/auth"
 
-// Mock activity data (will be replaced with real data later)
-const mockRecentActivity = [
-  { type: "success" as const, message: "School registration completed successfully", time: "Just now", icon: CheckCircle2 },
-  { type: "success" as const, message: "Admin account created and verified", time: "Just now", icon: CheckCircle2 },
-  { type: "info" as const, message: "Welcome email sent to admin", time: "2 min ago", icon: Mail },
-  { type: "info" as const, message: "System configuration initialized", time: "5 min ago", icon: Settings },
+// Placeholder activity data (to be replaced with live logs later)
+const placeholderRecentActivity = [
+  { type: "info" as const, message: "No attendance activity yet", time: "Pending implementation", icon: Clock3 },
+  { type: "info" as const, message: "No enrollment activity yet", time: "Pending implementation", icon: Clock3 },
+  { type: "info" as const, message: "Recent activity feed will appear here", time: "Pending implementation", icon: Clock3 },
 ]
 
-// Mock stats (will be replaced with real data later)
-const mockStats = [
-  { label: "Total Students", value: 0, icon: Users, colorClass: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
-  { label: "Registered Devices", value: 0, icon: Smartphone, colorClass: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400" },
-  { label: "Enrollments", value: 0, icon: UserPlus, colorClass: "bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400" },
-  { label: "Today's Attendance", value: 0, icon: Users, colorClass: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" },
-]
+interface DashboardStats {
+  totalStudents: number
+  registeredDevices: number
+  enrollments: number
+  todaysAttendance: number
+}
+
+const DEFAULT_STATS: DashboardStats = {
+  totalStudents: 0,
+  registeredDevices: 0,
+  enrollments: 0,
+  todaysAttendance: 0,
+}
 
 export default function DashboardPage() {
   const router = useRouter()
   const { token, setUser } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [school, setSchool] = useState<SchoolResponse | null>(null)
+  const [stats, setStats] = useState<DashboardStats>(DEFAULT_STATS)
   const [error, setError] = useState<string | null>(null)
 
   // Fetch school data
   useEffect(() => {
     if (!token) return
 
-    const fetchSchool = async () => {
+    const fetchDashboardStats = async (): Promise<DashboardStats> => {
+      const [studentsResponse, devicesFirstPage, attendanceResponse, successfulEnrollments] = await Promise.all([
+        listStudents(token, { page: 1, page_size: 1 }),
+        listDevices(token, { page: 1, page_size: 1 }),
+        getAttendanceStats(token),
+        getSuccessfulEnrollmentCount(token),
+      ])
+
+      return {
+        totalStudents: studentsResponse.total,
+        registeredDevices: devicesFirstPage.total,
+        enrollments: successfulEnrollments,
+        todaysAttendance: attendanceResponse.total_events,
+      }
+    }
+
+    const fetchDashboardData = async () => {
       try {
         setIsLoading(true)
-        const schoolData = await getMySchool(token)
-        setSchool(schoolData)
-        
-        // Update user info from API response if available (user comes from token via API)
-        if (schoolData.user) {
-          setUser(schoolData.user as UserResponse)
+        setError(null)
+
+        const [schoolResult, statsResult] = await Promise.allSettled([
+          getMySchool(token),
+          fetchDashboardStats(),
+        ])
+
+        if (schoolResult.status === "fulfilled") {
+          setSchool(schoolResult.value)
+
+          // Update user info from API response if available (user comes from token via API)
+          if (schoolResult.value.user) {
+            setUser(schoolResult.value.user as UserResponse)
+          }
+        } else {
+          console.error("Failed to fetch school data:", schoolResult.reason)
+          setError("Failed to load school information")
+        }
+
+        if (statsResult.status === "fulfilled") {
+          setStats(statsResult.value)
+        } else {
+          console.error("Failed to fetch dashboard stats:", statsResult.reason)
         }
       } catch (err) {
-        console.error("Failed to fetch school data:", err)
-        setError("Failed to load school information")
+        console.error("Failed to fetch dashboard data:", err)
+        setError("Failed to load dashboard")
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchSchool()
+    fetchDashboardData()
   }, [token, setUser])
 
   const handleManageSchoolSettings = () => {
@@ -73,6 +115,32 @@ export default function DashboardPage() {
   // Get user info from store (layout handles authentication)
   const { user } = useAuthStore()
   const adminFirstName = user?.first_name || user?.email.split("@")[0] || ""
+  const dashboardStats = [
+    {
+      label: "Total Students",
+      value: stats.totalStudents,
+      icon: Users,
+      colorClass: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
+    },
+    {
+      label: "Registered Devices",
+      value: stats.registeredDevices,
+      icon: Smartphone,
+      colorClass: "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400",
+    },
+    {
+      label: "Enrollments",
+      value: stats.enrollments,
+      icon: UserPlus,
+      colorClass: "bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400",
+    },
+    {
+      label: "Today's Attendance",
+      value: stats.todaysAttendance,
+      icon: Users,
+      colorClass: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
+    },
+  ]
 
   return (
     <motion.main
@@ -98,7 +166,7 @@ export default function DashboardPage() {
                   animate="visible"
                   className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
                 >
-                  {mockStats.map((stat, index) => (
+                  {dashboardStats.map((stat, index) => (
                     <StatCard key={stat.label} {...stat} index={index} />
                   ))}
                 </motion.div>
@@ -124,7 +192,7 @@ export default function DashboardPage() {
                 )}
 
                 {/* Recent Activity */}
-                <RecentActivityCard activities={mockRecentActivity} />
+                <RecentActivityCard activities={placeholderRecentActivity} />
               </motion.div>
 
               {/* Action Cards */}

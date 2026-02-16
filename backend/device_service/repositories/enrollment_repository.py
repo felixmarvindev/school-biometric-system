@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 from typing import Optional, Sequence
 
@@ -336,3 +336,13 @@ class EnrollmentRepository:
         result = await self.db.execute(query)
         fingers = list(dict.fromkeys(r[0] for r in result.fetchall()))
         return sorted(fingers)
+
+    async def count_completed(self, school_id: int) -> int:
+        """Count successful (completed) enrollment sessions for a school."""
+        query = select(func.count(EnrollmentSession.id)).where(
+            EnrollmentSession.school_id == school_id,
+            EnrollmentSession.status == EnrollmentStatus.COMPLETED.value,
+            EnrollmentSession.is_deleted == False,
+        )
+        result = await self.db.execute(query)
+        return int(result.scalar() or 0)

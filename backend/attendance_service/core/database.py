@@ -1,17 +1,15 @@
-"""Database connection and session management."""
+"""Database connection and session management for Attendance Service."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from device_service.core.config import settings
+from attendance_service.core.config import settings
 
 # Import all models to ensure SQLAlchemy can resolve relationships
-# This is critical for the health check service which creates sessions independently
-from school_service.models.school import School
-from school_service.models.user import User
-from school_service.models.student import Student
-from device_service.models.device import Device
-from device_service.models.device_group import DeviceGroup
-from device_service.models.enrollment import EnrollmentSession
-from device_service.models.fingerprint_template import FingerprintTemplate
+from school_service.models.school import School  # noqa: F401
+from school_service.models.user import User  # noqa: F401
+from school_service.models.student import Student  # noqa: F401
+from school_service.models.academic_class import AcademicClass  # noqa: F401
+from school_service.models.stream import Stream  # noqa: F401
+from device_service.models.device import Device  # noqa: F401
 from attendance_service.models.attendance_record import AttendanceRecord  # noqa: F401
 
 # Create async engine
@@ -36,4 +34,3 @@ async def get_db() -> AsyncSession:
             yield session
         finally:
             await session.close()
-

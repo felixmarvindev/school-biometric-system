@@ -17,11 +17,11 @@ Implement ingestion pipeline to store attendance logs fetched from devices into 
 
 ## Acceptance Criteria
 
-1. [ ] Endpoint exists to trigger ingestion for one device (admin-only, school-scoped).
-2. [ ] Ingestion stores new attendance records and skips duplicates.
-3. [ ] Dedupe key is well-defined (e.g., `device_id + device_user_id + occurred_at + punch_type`).
-4. [ ] Returns a summary: `{ inserted, skipped, total }`.
-5. [ ] Does not commit partial state if response preparation fails (transaction-safe).
+1. [x] Endpoint exists to trigger ingestion for one device (admin-only, school-scoped).
+2. [x] Ingestion stores new attendance records and skips duplicates.
+3. [x] Dedupe key is well-defined (e.g., `device_id + device_user_id + occurred_at`).
+4. [x] Returns a summary: `{ inserted, skipped, total }`.
+5. [x] Does not commit partial state if response preparation fails (transaction-safe).
 
 ## Implementation Notes
 
